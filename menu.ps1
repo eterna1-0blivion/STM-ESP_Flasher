@@ -1,13 +1,8 @@
 # author: eterna1_0blivion
-$version = 'v0.0.1'
+$version = 'v0.0.2'
 
-# Некоторые пред-установки
-$theme = '$Host.UI.RawUI.BackgroundColor = "Black"; $Host.UI.RawUI.ForegroundColor = "Gray"; Clear-Host'
-$exit = 'Read-Host -Prompt "Press Enter to exit"; Break'
-
-# Устанавливаем заголовок консоли, меняем тему и выводим первую строку
-$Host.UI.RawUI.WindowTitle = "STM32 Mini-Flasher ($version)"
-Invoke-Expression $theme
+# Устанавливаем заголовок консоли и меняем задний фон
+$Host.UI.RawUI.WindowTitle = "STM32 Mini-Flasher ($version)"; $Host.UI.RawUI.BackgroundColor = "Black"
 
 # Корректное определение папки запуска для EXE и для обычного скрипта PS
 if ($MyInvocation.MyCommand.CommandType -eq "ExternalScript") {
@@ -20,8 +15,11 @@ $CurrentDir = $ScriptDir
 
 #TODO: добавить статус обнаруженнвх подключений (COM и DFU устройств)
 #TODO: дать возможность перевести подключенный полётник в режим DFU или вывести его из этого режима - инициировать переподключение
-#TODO: добавить выход из программы при пустом вводе (enter)
+#TODO: добавить автоматический поиск файла прошивки (чтобы скрипт сам искал любые .bin файлы в папке и предлагал их выбрать
+#TODO: добавить возможность установки необходимых драйверов для COM и DFU устройств (в том числе инициация Impulse RC)
 
+
+# Вывод сообщений в консоль
 function Show-Message {
     param (
             [string]$Message,
@@ -33,11 +31,12 @@ function Show-Message {
         [Console]::ForegroundColor = [ConsoleColor]::$Color
         [Console]::WriteLine("$Message")
 }
-
+# Ввод от пользователя
 function Show-Input {
         param (
             [string]$Message
         )
+        [Console]::ForegroundColor = [ConsoleColor]::White
         [Console]::Write("$Message")
 }
 
@@ -45,24 +44,22 @@ function Show-Header {
     Clear-Host
     Show-Message -Message "=== Работа с прошивкой Полётного Контроллера ===" -Color "Cyan"
 }
-
 function Show-Menu {
     Show-Header
     Show-Message -Message "
     1. Считать прошивку с FC (Сохранить в fw.bin)
     2. Записать прошивку на FC (Из файла fw.bin)
     3. Полностью стереть прошивку на FC
-    4. Выход из программы
+
+    0. Выход из программы
     " -Color "White"
 
-    Show-Input "`n> Выберите действие [1-4]: "
+    Show-Input "`n> Выберите действие [0-3]: "
 }
-
 function Show-Wait {
     Show-Header
     Show-Message -Message "`nПрограмма выполняется..." -Color "Gray"
 }
-
 function Show-Exit {
     Show-Message -Message "`n> Нажми любую клавишу для возврата в меню..." -Color "White"
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
@@ -122,7 +119,7 @@ while ($true) {
             Show-Exit
         }
         # Exit Flasher
-        "4" {
+        "0" {
             exit
         }
     }
