@@ -23,7 +23,8 @@ else {
 $currentDir = $scriptDir
 
 # Путь до STM32 CLI
-$stm32Tool = Join-Path $currentDir "bin\stm32pr.exe"
+$stm32Tool = Join-Path $currentDir "files\STM32CubeCLT\bin\STM32_Programmer_CLI.exe"
+$driverTool = Join-Path $currentDir "files\ImpulseRC_Driver_Fixer.exe"
 
 # Вывод сообщений в консоль
 function Show-Message {
@@ -249,7 +250,6 @@ while ($true) {
         # Исправление драйверов ImpulseRC с чистой аппаратной проверкой
         "5" {
             Show-Wait
-            $DriverTool = Join-Path $scriptDir "ImpulseRC.exe"
             
             try {
                 Show-Message -Message "Запуск ImpulseRC Driver Fixer... Пожалуйста, подожди завершения работы утилиты." -Color "Gray"
@@ -259,7 +259,7 @@ while ($true) {
                 $dfuBefore = $allDevsBefore | Where-Object { $_.Present -and ($_.Name -like "*DFU*" -or $_.DeviceID -like "*VID_0483&PID_DF11*") }
                 $hadDfu = $null -ne $dfuBefore
                 # 2. Запускаем процесс и ждем его закрытия
-                $proc = Start-Process $DriverTool -PassThru -Wait
+                $proc = Start-Process $driverTool -PassThru -Wait
                 # Короткая пауза для обновления конфигурации оборудования операционной системой
                 Start-Sleep -Seconds 3
                 # 3. Делаем повторный аппаратный опрос системы ПОСЛЕ закрытия утилиты
