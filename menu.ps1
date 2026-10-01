@@ -46,6 +46,11 @@ function Show-Input {
     [Console]::Write("$Message")
 }
 
+function Show-Header {
+    Clear-Host
+    Show-Message -Message "=== Работа с прошивкой Полётного Контроллера ===" -Color "Cyan"
+}
+
 # Кроссплатформенный опрос оборудования с защитой от ложных срабатываний (Component)
 function Get-DeviceStatus {
     # Сначала говорим пользователю, что программа думает
@@ -57,6 +62,7 @@ function Get-DeviceStatus {
     $comDevices = $allDevices | Where-Object { $_.Present -and ($_.Name -like "*STMicroelectronics*" -or $_.Name -like "*(COM*") }
     $dfuDevices = $allDevices | Where-Object { $_.Present -and ($_.Name -like "*DFU*" -or $_.DeviceID -like "*VID_0483&PID_DF11*") }
 
+    Show-Header
     Show-Message -Message "---------------------------------------------------------" -Color "DarkGray"
     if ($comDevices) {
         foreach ($dev in $comDevices) {
@@ -94,11 +100,6 @@ function Get-OpenFilePath {
     $dialog.Filter = "Файлы прошивок (*.bin;*.hex)|*.bin;*.hex|Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex"
     if ($dialog.ShowDialog() -eq $true) { return $dialog.FileName }
     return $null
-}
-
-function Show-Header {
-    Clear-Host
-    Show-Message -Message "=== Работа с прошивкой Полётного Контроллера ===" -Color "Cyan"
 }
 
 function Show-Menu {
