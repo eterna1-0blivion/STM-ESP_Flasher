@@ -1,5 +1,5 @@
 # author: eterna1_0blivion
-$version = 'v0.0.5a'
+$version = 'v0.0.6a'
 
 # Устанавливаем заголовок консоли и меняем задний фон
 $Host.UI.RawUI.WindowTitle = "STM32 Mini-Flasher ($version)"; $Host.UI.RawUI.BackgroundColor = "Black"
@@ -12,6 +12,9 @@ else {
     $scriptDir = [System.IO.Path]::GetDirectoryName([System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)
 }
 $currentDir = $scriptDir
+
+# Подгружаем системную графическую библиотеку для работы с окнами Windows
+Add-Type -AssemblyName System.Windows.Forms
 
 # Вывод сообщений в консоль
 function Show-Message {
@@ -58,47 +61,35 @@ function Get-DeviceStatus {
     Show-Message -Message "---------------------------------------------------------" -Color "DarkGray"
 }
 
-# Выбор файлов прошивки
-function Select-FirmwareFile {
-    $binFiles = Get-ChildItem -Path $scriptDir -Filter *.bin | Where-Object { $_.Name -ne "fw.bin" }
-    $defaultFile = Join-Path $scriptDir "fw.bin"
+# Интерактивное окно сохранения файла прошивки через Проводник Windows
+function Get-SaveFilePath {
+    $dialog = New-Object System.Windows.Forms.SaveFileDialog
+    $dialog.InitialDirectory = $scriptDir
+    $dialog.Title = "Выбери, куда сохранить считанную прошивку"
+    $dialog.Filter = "Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex"
+    $dialog.FileName = "fw.bin" # имя по умолчанию
     
-    if ($binFiles.Count -eq 0) {
-        if (Test-Path $defaultFile) { return $defaultFile }
-        return $null
+    # Показываем окно поверх консоли
+    $result = $dialog.ShowDialog((New-Object System.Windows.Forms.NativeWindow))
+    if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+        return $dialog.FileName
     }
+    return $null
+}
 
-    Show-Header
-    $fileMenu = "`nВ папке программы найдены файлы прошивок. Выбери нужный:`n"
-    if (Test-Path $defaultFile) { 
-        $defTime = (Get-Item $defaultFile).LastWriteTime.ToString("dd.MM.yyyy HH:mm")
-        $fileMenu += "`n1. Стандартный файл: fw.bin [$defTime]" 
-    }
+# Интерактивное окно выбора файла для записи через Проводник Windows
+function Get-OpenFilePath {
+    $dialog = New-Object System.Windows.Forms.OpenFileDialog
+    $dialog.InitialDirectory = $scriptDir
+    $dialog.Title = "Выбери файл прошивки для записи на полётник"
+    # Добавлена полная поддержка BIN и HEX стандартов Betaflight
+    $dialog.Filter = "Файлы прошивок (*.bin;*.hex)|*.bin;*.hex|Сырой дамп (*.bin)|*.bin|Intel HEX (*.hex)|*.hex"
     
-    $fileList = @()
-    if (Test-Path $defaultFile) { $fileList += , $defaultFile }
-    
-    $startIndex = $fileList.Count + 1
-    for ($i = 0; $i -lt $binFiles.Count; $i++) {
-        $fileList += , $binFiles[$i].FullName
-        $fileTime = $binFiles[$i].LastWriteTime.ToString("dd.MM.yyyy HH:mm")
-        $fileMenu += "`n$($startIndex + $i). $($binFiles[$i].Name) [$fileTime]"
+    $result = $dialog.ShowDialog((New-Object System.Windows.Forms.NativeWindow))
+    if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+        return $dialog.FileName
     }
-    $fileMenu += "`n0. Отмена операции"
-    
-    Show-Message -Message $fileMenu -Color "White"
-
-    while ($true) {
-        Show-Input "`n> Введи номер файла: "
-        $fChoice = [Console]::ReadLine()
-        if ($fChoice -eq "0") { return $null }
-        
-        $parsedIndex = 0
-        if ([int]::TryParse($fChoice, [ref]$parsedIndex) -and $parsedIndex -le $fileList.Count -and $parsedIndex -gt 0) {
-            return $fileList[$parsedIndex - 1]
-        }
-        Show-Message -Message "Команда не найдена. Попробуй другую." -Color "Yellow"
-    }
+    return $null
 }
 
 function Show-Header {
@@ -111,8 +102,8 @@ function Show-Menu {
     Get-DeviceStatus
     
     Show-Message -Message "
-    1. Считать прошивку с FC (Сохранить в fw.bin)
-    2. Записать прошивку на FC (Выбор файла)
+    1. Считать прошивку с FC (Выбрать куда сохранить)
+    2. Записать прошивку на FC (Выбрать файл на диске)
     3. Полностью стереть прошивку на FC
     4. Управление режимом DFU (Вход / Выход)
     5. Помощник исправления драйверов (ImpulseRC)
@@ -138,22 +129,31 @@ while ($true) {
     $choice = [Console]::ReadLine()
 
     switch ($choice) {
-        # Read FW
+        # Read FW (Чтение с выбором пути сохранения)
         "1" {
-            Show-Wait
-            $TargetFile = Join-Path $scriptDir "fw.bin"
-            if (Test-Path $TargetFile) { Remove-Item $TargetFile -Force -ErrorAction SilentlyContinue }
-            
-            & "$currentDir\bin\stm32pr.exe" -c port=usb1 -r 0x08000000 0x80000 "$TargetFile" | Out-Null
-            & "$currentDir\bin\stm32pr.exe" -c port=usb1 -r 0x08000000 0x100000 "$TargetFile" | Out-Null
+            $saveFile = Get-SaveFilePath
+            if ($null -eq $saveFile) {
+                Show-Header
+                Show-Message -Message "`nОперация отменена пользователем." -Color "Yellow"
+                Show-Exit
+                continue
+            }
 
-            if (Test-Path $TargetFile) {
-                $fileSize = (Get-Item $TargetFile).Length
+            Show-Wait
+            if (Test-Path $saveFile) { Remove-Item $saveFile -Force -ErrorAction SilentlyContinue }
+            
+            # Определяем размер считывания в зависимости от расширения, выбранного пользователем
+            # По умолчанию шьем стандартные размеры для полетников
+            & "$currentDir\bin\stm32pr.exe" -c port=usb1 -r 0x08000000 0x80000 "$saveFile" | Out-Null
+            & "$currentDir\bin\stm32pr.exe" -c port=usb1 -r 0x08000000 0x100000 "$saveFile" | Out-Null
+
+            if (Test-Path $saveFile) {
+                $fileSize = (Get-Item $saveFile).Length
                 if ($fileSize -gt 0) {
-                    Show-Message -Message "`nОперация выполнена - прошивка 'fw.bin' находится в папке программы." -Color "Green"                
+                    Show-Message -Message "`nОперация выполнена - прошивка сохранена в:`n$saveFile" -Color "Green"                
                 }
                 else {
-                    Remove-Item $TargetFile -Force -ErrorAction SilentlyContinue
+                    Remove-Item $saveFile -Force -ErrorAction SilentlyContinue
                     Show-Message -Message "`nОшибка! Скачанный файл оказался пустым (0 КБ). Прошивка не сохранена." -Color "Red"
                 }
             }
@@ -163,20 +163,29 @@ while ($true) {
             Show-Exit
         }
         
-        # Write FW
+        # Write FW (Запись через Проводник с автоматическим парсингом BIN/HEX)
         "2" {
-            $SelectedFile = Select-FirmwareFile
-            if ($null -eq $SelectedFile) {
+            $selectedFile = Get-OpenFilePath
+            if ($null -eq $selectedFile) {
                 Show-Header
-                Show-Message -Message "`nОперация отменена или файлы прошивки (.bin) не обнаружены." -Color "Yellow"
+                Show-Message -Message "`nОперация отменена пользователем." -Color "Yellow"
                 Show-Exit
                 continue
             }
 
             Show-Wait
-            Show-Message -Message "Запись файла: $(Split-Path $SelectedFile -Leaf)" -Color "Gray"
+            Show-Message -Message "Запись файла: $(Split-Path $selectedFile -Leaf)" -Color "Gray"
             
-            & "$currentDir\bin\stm32pr.exe" -c port=usb1 -w "$SelectedFile" 0x08000000 -v | Out-Null
+            $extension = [System.IO.Path]::GetExtension($selectedFile).ToLower()
+
+            if ($extension -eq ".hex") {
+                # Для HEX-файлов адрес указывать не нужно, stm32pr берет его из структуры самого HEX
+                & "$currentDir\bin\stm32pr.exe" -c port=usb1 -w "$selectedFile" -v | Out-Null
+            }
+            else {
+                # Для BIN-файлов адрес начала секторов обязателен
+                & "$currentDir\bin\stm32pr.exe" -c port=usb1 -w "$selectedFile" 0x08000000 -v | Out-Null
+            }
             
             if ($LastExitCode -eq 0) {
                 Show-Message -Message "`nОперация выполнена - прошивка записана на полётник." -Color "Green"
