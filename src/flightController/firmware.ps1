@@ -44,10 +44,17 @@ function Get-Stm32RuntimeDirectory {
 
     $requiredFiles = @(
         "Qt6Core.dll",
+        "Qt6Network.dll",
+        "Qt6Qml.dll",
+        "Qt6SerialPort.dll",
         "Qt6Xml.dll",
+        "libcrypto-3-x64.dll",
+        "liblzma-5.dll",
+        "libminizip.dll",
         "libstdc++-6.dll",
         "libgcc_s_seh-1.dll",
-        "libwinpthread-1.dll"
+        "libwinpthread-1.dll",
+        "libzstd.dll"
     )
 
     foreach ($directory in $candidateDirectories) {
@@ -99,7 +106,7 @@ function Invoke-Stm32Command {
             Succeeded = $false
             ExitCode  = $null
             Output    = @()
-            Error     = "Не найден полный совместимый набор DLL для STM32CubeProgrammer. Не копируйте только STM32_Programmer_CLI.exe: разместите рядом с ним Qt6Core.dll, Qt6Xml.dll, libstdc++-6.dll, libgcc_s_seh-1.dll и libwinpthread-1.dll из одной папки bin одной версии."
+            Error     = "Не найден полный совместимый набор DLL для STM32CubeProgrammer. Не копируйте только STM32_Programmer_CLI.exe: рядом с ним должны находиться все требуемые DLL из одного каталога bin одной версии."
         }
     }
 
