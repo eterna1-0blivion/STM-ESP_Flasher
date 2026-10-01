@@ -33,6 +33,77 @@ Describe "Show-Message line breaks" {
     }
 }
 
+Describe "Show-Message input prompts" {
+    It "prints a choice prompt with a greater-than sign and returns the entered value" {
+        $originalWriter = [Console]::Out
+        $originalReader = [Console]::In
+        $writer = New-Object System.IO.StringWriter
+        $reader = New-Object System.IO.StringReader("2`n")
+
+        try {
+            [Console]::SetOut($writer)
+            [Console]::SetIn($reader)
+            $choice = Show-Message -Message "Выбери действие: " -Input Choice
+            $prompt = $writer.ToString()
+        }
+        finally {
+            [Console]::SetOut($originalWriter)
+            [Console]::SetIn($originalReader)
+            $writer.Dispose()
+            $reader.Dispose()
+        }
+
+        $prompt | Should Be "> Выбери действие: "
+        $choice | Should Be "2"
+    }
+
+    It "starts a new line before the input marker" {
+        $originalWriter = [Console]::Out
+        $originalReader = [Console]::In
+        $writer = New-Object System.IO.StringWriter
+        $reader = New-Object System.IO.StringReader("yes`n")
+
+        try {
+            [Console]::SetOut($writer)
+            [Console]::SetIn($reader)
+            $null = Show-Message -Message "Выбери действие: " -Input Choice -NewLine
+            $prompt = $writer.ToString()
+        }
+        finally {
+            [Console]::SetOut($originalWriter)
+            [Console]::SetIn($originalReader)
+            $writer.Dispose()
+            $reader.Dispose()
+        }
+
+        $prompt | Should Be ([Environment]::NewLine + "> Выбери действие: ")
+    }
+
+    It "ignores typed keys and waits silently until Enter" {
+        $originalWriter = [Console]::Out
+        $writer = New-Object System.IO.StringWriter
+        $script:inputKeys = New-Object System.Collections.Queue
+        $script:inputKeys.Enqueue([pscustomobject]@{ Character = "x"; VirtualKeyCode = 88 })
+        $script:inputKeys.Enqueue([pscustomobject]@{ Character = " "; VirtualKeyCode = 32 })
+        $script:inputKeys.Enqueue([pscustomobject]@{ Character = "`r"; VirtualKeyCode = 13 })
+
+        try {
+            [Console]::SetOut($writer)
+            Mock Read-InputKey { $script:inputKeys.Dequeue() }
+            $result = Show-Message -Message "Нажми Enter для продолжения..." -Input Enter
+            $prompt = $writer.ToString()
+            Assert-MockCalled Read-InputKey -Times 3
+        }
+        finally {
+            [Console]::SetOut($originalWriter)
+            $writer.Dispose()
+        }
+
+        $prompt | Should Be "> Нажми Enter для продолжения..."
+        $result | Should Be $null
+    }
+}
+
 Describe "STM32 DFU device detection" {
     It "accepts the STM32 bootloader VID/PID and ignores unrelated DFU-named devices" {
         Mock Get-CimInstance {
