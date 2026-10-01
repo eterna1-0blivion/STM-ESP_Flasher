@@ -1,7 +1,7 @@
 # author: eterna1_0blivion
 $version = 'v0.0.7'
 
-# Принудительно заставляем любую версию PowerShell работать в UTF-8 (чинит кириллицу на PS 5.0)
+# Принудительно заставляем любую версию PowerShell работать в UTF-8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
 
@@ -43,10 +43,12 @@ function Show-Input {
     [Console]::Write("$Message")
 }
 
-# Динамическое определение статуса подключений COM и DFU устройств
+# Кроссплатформенный опрос оборудования с защитой от ложных срабатываний (Component)
 function Get-DeviceStatus {
     $allDevices = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction SilentlyContinue
-    $comDevices = $allDevices | Where-Object { $_.Present -and ($_.Name -like "*STMicroelectronics*" -or $_.Name -like "*COM*") }
+    
+    # Фильтруем строго по вхождению "(COM" с открывающей скобкой, чтобы отсечь сторонние компоненты
+    $comDevices = $allDevices | Where-Object { $_.Present -and ($_.Name -like "*STMicroelectronics*" -or $_.Name -like "*(COM*") }
     $dfuDevices = $allDevices | Where-Object { $_.Present -and ($_.Name -like "*DFU*" -or $_.DeviceID -like "*VID_0483&PID_DF11*") }
 
     Show-Message -Message "---------------------------------------------------------" -Color "DarkGray"
@@ -263,7 +265,6 @@ while ($true) {
                 $allDevsBefore = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction SilentlyContinue
                 $dfuBefore = $allDevsBefore | Where-Object { $_.Present -and ($_.Name -like "*DFU*" -or $_.DeviceID -like "*VID_0483&PID_DF11*") }
                 $hadDfu = $null -ne $dfuBefore
-
                 # 2. Запускаем процесс и ждем его закрытия
                 $proc = Start-Process $DriverTool -PassThru -Wait
                 # Короткая пауза для обновления конфигурации оборудования операционной системой
