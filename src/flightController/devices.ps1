@@ -1,7 +1,7 @@
 # Функция опроса оборудования для поиска подключенного полётного контроллера (STM32) и отображения его статуса
 
 function Show-DeviceStatus {
-    Show-Message -Message "Поиск подключенного оборудования..." -Color "Gray"
+    Show-Message -Message "`nПоиск подключенного оборудования..." -Color "Gray"
 
     try {
         $allDevices = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction Stop
