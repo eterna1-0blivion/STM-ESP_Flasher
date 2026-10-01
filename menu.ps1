@@ -1,6 +1,10 @@
 # author: eterna1_0blivion
 $version = 'v0.0.8a'
 
+# *Способы компиляции в .exe*: Подумать над альтернативами взамен долгого запуска через SFX.
+# *Раздел ESPtool*: Реализовать связку с ESPtool для работы с модулями управления.
+# *Раздел цифрового видеопередатчика*: Разработать модуль поддержки Caddx/Walksnail.
+
 # Принудительно заставляем любую версию PowerShell работать в UTF-8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
