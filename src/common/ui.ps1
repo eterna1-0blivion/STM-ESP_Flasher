@@ -4,12 +4,47 @@
 function Show-Message {
     param (
         [string]$Message,
+        [ValidateSet("None", "Success", "Status", "Error", "Cancelled", "Info", "Warning", "Diagnostic")]
+        [string]$Level = "None",
+        [switch]$NewLine,
         [ValidateSet("Black", "DarkBlue", "DarkGreen", "DarkCyan", "DarkRed", "DarkMagenta",
             "DarkYellow", "Gray", "DarkGray", "Blue", "Green", "Cyan", "Red", "Magenta", "Yellow", "White")]
         [string]$Color = "White"
     )
+
+    if ($Level -ne "None") {
+        # Text labels remain meaningful even in hosts that render console colors poorly.
+        $labels = @{
+            Success    = "[УСПЕХ]"
+            Status     = "[СТАТУС]"
+            Error      = "[ОШИБКА]"
+            Cancelled  = "[ОТМЕНА]"
+            Info       = "[ИНФО]"
+            Warning    = "[ВНИМАНИЕ]"
+            Diagnostic = "[ДИАГНОСТИКА]"
+        }
+        $levelColors = @{
+            Success    = "Green"
+            Status     = "Blue"
+            Error      = "Red"
+            Cancelled  = "Yellow"
+            Info       = "Gray"
+            Warning    = "DarkYellow"
+            Diagnostic = "DarkGray"
+        }
+
+        $Message = "$($labels[$Level]) $($Message.TrimStart())"
+        if (-not $PSBoundParameters.ContainsKey("Color")) {
+            $Color = $levelColors[$Level]
+        }
+    }
+
+    if ($NewLine) {
+        $Message = [Environment]::NewLine + $Message
+    }
+
     [Console]::ForegroundColor = [ConsoleColor]::$Color
-    [Console]::WriteLine("$Message")
+    [Console]::WriteLine($Message)
 }
 
 # Ввод от пользователя
@@ -23,11 +58,11 @@ function Show-Input {
 
 function Show-FlightControllerWait {
     Show-FlightControllerHeader
-    Show-Message -Message "`nПрограмма выполняется..." -Color "Gray"
+    Show-Message -Message "Программа выполняется..." -Level "Info" -NewLine
 }
 
 function Show-Exit {
-    Show-Message -Message "`n> Нажми любую клавишу для возврата в меню..." -Color "White"
+    Show-Message -Message "> Нажми любую клавишу для возврата в меню..." -Level "None" -NewLine
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
@@ -44,7 +79,7 @@ function Show-WrongInput {
         "RadioModule" { Show-RadioModuleHeader }
     }
 
-    Show-Message -Message "`nТакого пункта не предусмотрено." -Color "Yellow"
+    Show-Message -Message "Такого пункта не предусмотрено." -Level "Warning" -NewLine
     Show-Exit
 }
 

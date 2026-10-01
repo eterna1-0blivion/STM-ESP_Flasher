@@ -3,14 +3,14 @@
 # найденный COM-порт показывается как кандидат, но не объявляется полётным контроллером.
 
 function Show-DeviceStatus {
-    Show-Message -Message "`nПоиск подключенного оборудования..." -Color "Gray"
+    Show-Message -Message "Поиск подключённого оборудования..." -Level "Info" -NewLine
 
     try {
         $allDevices = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction Stop
     }
     catch {
-        Show-Message -Message "[ОШИБКА] Не удалось проверить подключённые устройства." -Color "Red"
-        Show-Message -Message $_.Exception.Message -Color "DarkRed"
+        Show-Message -Message "Не удалось проверить подключённые устройства." -Level "Error"
+        Show-Message -Message $_.Exception.Message -Level "Diagnostic"
         return
     }
     $comDevices = @(
@@ -24,18 +24,18 @@ function Show-DeviceStatus {
     Show-Separator
     if ($dfuDevices.Count -gt 0) {
         foreach ($dev in $dfuDevices) {
-            Show-Message -Message "[СТАТУС] Полётный контроллер обнаружен в режиме прошивки: $($dev.Name)" -Color "Green"
+            Show-Message -Message "Полётный контроллер обнаружен в режиме прошивки: $($dev.Name)" -Level "Status"
         }
     }
 
     if ($comDevices.Count -gt 0) {
         foreach ($dev in $comDevices) {
-            Show-Message -Message "[СТАТУС] Возможный полётный контроллер: $($dev.Name)" -Color "Cyan"
+            Show-Message -Message "Возможный полётный контроллер: $($dev.Name)" -Level "Status"
         }
     }
 
     if ($comDevices.Count -eq 0 -and $dfuDevices.Count -eq 0) {
-        Show-Message -Message "[СТАТУС] Полётный контроллер не обнаружен." -Color "DarkYellow"
+        Show-Message -Message "Полётный контроллер не обнаружен." -Level "Status"
     }
     Show-Separator
 }

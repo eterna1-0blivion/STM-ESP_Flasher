@@ -77,13 +77,13 @@ function Show-Stm32CommandFailure {
     )
 
     if ($null -ne $Result.ExitCode) {
-        Show-Message -Message "Код завершения STM32 CLI: $($Result.ExitCode)." -Color "Red"
+        Show-Message -Message "Код завершения STM32 CLI: $($Result.ExitCode)." -Level "Diagnostic"
     }
     if ($Result.Error) {
-        Show-Message -Message $Result.Error -Color "DarkRed"
+        Show-Message -Message $Result.Error -Level "Diagnostic"
     }
     foreach ($line in $Result.Output) {
-        Show-Message -Message $line -Color "DarkRed"
+        Show-Message -Message $line -Level "Diagnostic"
     }
 }
 
@@ -96,7 +96,7 @@ function Invoke-FlightControllerFirmwareRead {
     $saveFile = Get-SaveFilePath -Config $Config
     if ($null -eq $saveFile) {
         Show-FlightControllerHeader
-        Show-Message -Message "`nОперация отменена пользователем." -Color "Yellow"
+        Show-Message -Message "Операция отменена пользователем." -Level "Cancelled" -NewLine
         Show-Exit
         return
     }
@@ -108,8 +108,8 @@ function Invoke-FlightControllerFirmwareRead {
         }
     }
     catch {
-        Show-Message -Message "`nНе удалось подготовить файл для чтения прошивки." -Color "Red"
-        Show-Message -Message $_.Exception.Message -Color "DarkRed"
+        Show-Message -Message "Не удалось подготовить файл для чтения прошивки." -Level "Error" -NewLine
+        Show-Message -Message $_.Exception.Message -Level "Diagnostic"
         Show-Exit
         return
     }
@@ -118,14 +118,14 @@ function Invoke-FlightControllerFirmwareRead {
         "-c", "port=usb1", "-r", "0x08000000", "0x100000", $saveFile
     )
     if (-not $result.Succeeded) {
-        Show-Message -Message "`nНе удалось прочитать прошивку. Диагностика STM32 CLI:" -Color "Red"
+        Show-Message -Message "Не удалось прочитать прошивку." -Level "Error" -NewLine
         Show-Stm32CommandFailure -Result $result
         if (Test-Path -LiteralPath $saveFile) {
             try {
                 Remove-Item -LiteralPath $saveFile -Force -ErrorAction Stop
             }
             catch {
-                Show-Message -Message "Не удалось удалить неполный файл прошивки: $($_.Exception.Message)" -Color "DarkRed"
+                Show-Message -Message "Не удалось удалить неполный файл прошивки: $($_.Exception.Message)" -Level "Diagnostic"
             }
         }
         Show-Exit
@@ -135,22 +135,22 @@ function Invoke-FlightControllerFirmwareRead {
     if (Test-Path -LiteralPath $saveFile) {
         $fileSize = (Get-Item -LiteralPath $saveFile).Length
         if ($fileSize -gt 0) {
-            Show-Message -Message "`nОперация выполнена - прошивка сохранена в:`n$saveFile" -Color "Green"                
+            Show-Message -Message "Прошивка сохранена в:`n$saveFile" -Level "Success" -NewLine
         }
         else {
-            Show-Message -Message "`nОшибка! Скачанный файл оказался пустым (0 КБ). Прошивка не сохранена." -Color "Red"
+            Show-Message -Message "Считанный файл пустой (0 байт); прошивка не сохранена." -Level "Error" -NewLine
             try {
                 Remove-Item -LiteralPath $saveFile -Force -ErrorAction Stop
             }
             catch {
-                Show-Message -Message "Не удалось удалить пустой файл: $($_.Exception.Message)" -Color "DarkRed"
+                Show-Message -Message "Не удалось удалить пустой файл: $($_.Exception.Message)" -Level "Diagnostic"
             }
         }
     }
     else {
-        Show-Message -Message "`nSTM32 CLI не сообщил об ошибке, но файл прошивки не был создан." -Color "Red"
+        Show-Message -Message "STM32 CLI не сообщил об ошибке, но файл прошивки не был создан." -Level "Error" -NewLine
         foreach ($line in $result.Output) {
-            Show-Message -Message $line -Color "DarkRed"
+            Show-Message -Message $line -Level "Diagnostic"
         }
     }
     Show-Exit
@@ -165,13 +165,13 @@ function Invoke-FlightControllerFirmwareWrite {
     $selectedFile = Get-OpenFilePath -Config $Config
     if ($null -eq $selectedFile) {
         Show-FlightControllerHeader
-        Show-Message -Message "`nОперация отменена пользователем." -Color "Yellow"
+        Show-Message -Message "Операция отменена пользователем." -Level "Cancelled" -NewLine
         Show-Exit
         return
     }
 
     Show-FlightControllerWait
-    Show-Message -Message "Запись файла: $(Split-Path $selectedFile -Leaf)" -Color "Gray"
+    Show-Message -Message "Запись файла: $(Split-Path $selectedFile -Leaf)" -Level "Info"
     $extension = [System.IO.Path]::GetExtension($selectedFile).ToLower()
 
     if ($extension -eq ".hex") {
@@ -183,10 +183,10 @@ function Invoke-FlightControllerFirmwareWrite {
 
     $result = Invoke-Stm32Command -Config $Config -Arguments $arguments
     if ($result.Succeeded) {
-        Show-Message -Message "`nОперация выполнена - прошивка записана на полётник." -Color "Green"
+        Show-Message -Message "Прошивка записана на полётный контроллер." -Level "Success" -NewLine
     }
     else {
-        Show-Message -Message "`nПрошивка НЕ записана." -Color "Red"
+        Show-Message -Message "Прошивка не записана." -Level "Error" -NewLine
         Show-Stm32CommandFailure -Result $result
     }
     Show-Exit
@@ -202,10 +202,10 @@ function Invoke-FlightControllerFirmwareErase {
     $result = Invoke-Stm32Command -Config $Config -Arguments @("-c", "port=usb1", "-e", "all")
             
     if ($result.Succeeded) {
-        Show-Message -Message "`nОперация выполнена - прошивка на полётнике стёрта." -Color "Green"
+        Show-Message -Message "Прошивка на полётном контроллере стёрта." -Level "Success" -NewLine
     }
     else {
-        Show-Message -Message "`nПрошивка НЕ стёрта." -Color "Red"
+        Show-Message -Message "Прошивка не стёрта." -Level "Error" -NewLine
         Show-Stm32CommandFailure -Result $result
     }
     Show-Exit
@@ -248,14 +248,14 @@ function Invoke-FlightControllerDFU {
 
     if ($result.Succeeded) {
         if ($dfuChoice -eq "1") {
-            Show-Message -Message "`nКоманда отправлена. Если плата поддерживает программный DFU, она переподключится." -Color "Green"
+            Show-Message -Message "Команда отправлена. Если плата поддерживает программный DFU, она переподключится." -Level "Info" -NewLine
         }
         else {
-            Show-Message -Message "`nКоманда выхода отправлена. Плата перезагружается в рабочий режим." -Color "Green"
+            Show-Message -Message "Команда выхода отправлена. Плата должна перезагрузиться в рабочий режим." -Level "Info" -NewLine
         }
     }
     else {
-        Show-Message -Message "`nНе удалось выполнить команду управления DFU." -Color "Red"
+        Show-Message -Message "Не удалось выполнить команду управления DFU." -Level "Error" -NewLine
         Show-Stm32CommandFailure -Result $result
     }
     Show-Exit
@@ -275,35 +275,35 @@ function Get-ImpulseRCOutcome {
         return [pscustomobject]@{
             Status  = "Error"
             Message = "ImpulseRC завершился с кодом $ExitCode."
-            Color   = "Red"
+            Level   = "Error"
         }
     }
     if ($DfuAfter -and $DfuBefore) {
         return [pscustomobject]@{
             Status  = "AlreadyInDfu"
             Message = "Полётный контроллер уже находился в режиме DFU и остался доступен."
-            Color   = "Cyan"
+            Level   = "Status"
         }
     }
     if ($DfuAfter) {
         return [pscustomobject]@{
             Status  = "DfuDetected"
             Message = "Полётный контроллер обнаружен в режиме DFU и готов к прошивке."
-            Color   = "Green"
+            Level   = "Success"
         }
     }
     if ($DfuBefore) {
         return [pscustomobject]@{
             Status  = "DfuLost"
             Message = "Полётный контроллер был в режиме DFU до запуска ImpulseRC, но после запуска больше не обнаружен."
-            Color   = "Red"
+            Level   = "Error"
         }
     }
 
     [pscustomobject]@{
         Status  = "NoDfuDetected"
         Message = "После работы ImpulseRC полётный контроллер в режиме DFU не обнаружен."
-        Color   = "Yellow"
+        Level   = "Warning"
     }
 }
 
@@ -314,7 +314,7 @@ function Invoke-ImpulseRCDriverFixer {
     )
 
     Show-FlightControllerWait
-    Show-Message -Message "`nПодожди завершения работы утилиты ImpulseRC Driver Fixer." -Color "Gray"
+    Show-Message -Message "Подожди завершения работы утилиты ImpulseRC Driver Fixer." -Level "Info" -NewLine
 
     try {
         if (-not (Test-Path -LiteralPath $Config.DriverFixerPath -PathType Leaf)) {
@@ -327,11 +327,11 @@ function Invoke-ImpulseRCDriverFixer {
         $dfuAfter = @(Get-ConnectedStm32DfuDevices).Count -gt 0
 
         $outcome = Get-ImpulseRCOutcome -ExitCode $process.ExitCode -DfuBefore $dfuBefore -DfuAfter $dfuAfter
-        Show-Message -Message "`n$($outcome.Message)" -Color $outcome.Color
+        Show-Message -Message $outcome.Message -Level $outcome.Level  -NewLine
     }
     catch {
-        Show-Message -Message "`nНе удалось запустить ImpulseRC или проверить состояние DFU." -Color "Red"
-        Show-Message -Message $_.Exception.Message -Color "DarkRed"
+        Show-Message -Message "Не удалось запустить ImpulseRC или проверить состояние DFU." -Level "Error"  -NewLine
+        Show-Message -Message $_.Exception.Message -Level "Diagnostic"
     }
 
     Show-Exit
