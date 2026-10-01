@@ -1,5 +1,5 @@
 # author: eterna1_0blivion
-$version = 'v0.0.4b'
+$version = 'v0.0.5a'
 
 # Устанавливаем заголовок консоли и меняем задний фон
 $Host.UI.RawUI.WindowTitle = "STM32 Mini-Flasher ($version)"; $Host.UI.RawUI.BackgroundColor = "Black"
