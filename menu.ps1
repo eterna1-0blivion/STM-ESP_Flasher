@@ -1,9 +1,7 @@
 # author: eterna1_0blivion
 $version = 'v0.1.1'
 
-# *Способы компиляции в .exe*: Подумать над альтернативами взамен долгого запуска через SFX.
-# *Раздел ESPtool*: Реализовать связку с ESPtool для работы с модулями управления.
-# *Раздел цифрового видеопередатчика*: Разработать модуль поддержки Caddx/Walksnail.
+# Планируемые направления: поддержка ESPtool и цифровых видеопередатчиков.
 
 # Принудительно заставляем любую версию PowerShell работать в UTF-8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -17,7 +15,7 @@ $Host.UI.RawUI.WindowTitle = "FPV-Flasher ($version)"
 $Host.UI.RawUI.BackgroundColor = "Black"
 Clear-Host
 
-# Корректное определение папки запуска для EXE и для обычного скрипта PS
+# Все пути ресурсов вычисляются от каталога приложения, независимо от текущего каталога PowerShell.
 if ($MyInvocation.MyCommand.CommandType -eq "ExternalScript") {
     $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
 }
@@ -25,9 +23,12 @@ else {
     $scriptDir = [System.IO.Path]::GetDirectoryName([System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)
 }
 
-# Путь до STM32 CLI
-$stm32Tool = Join-Path $scriptDir "files\STM32CubeCLT\bin\STM32_Programmer_CLI.exe"
-$driverTool = Join-Path $scriptDir "files\ImpulseRC_Driver_Fixer.exe"
+# Передаём зависимости явно в рабочие функции, а не полагаемся на переменные из области видимости скрипта.
+$appConfig = [pscustomobject]@{
+    RootDirectory       = $scriptDir
+    STM32ProgrammerPath = Join-Path $scriptDir "files\STM32CubeCLT\bin\STM32_Programmer_CLI.exe"
+    DriverFixerPath      = Join-Path $scriptDir "files\ImpulseRC_Driver_Fixer.exe"
+}
 
 . (Join-Path $scriptDir "src\common\ui.ps1")
 . (Join-Path $scriptDir "src\flightController\devices.ps1")
@@ -56,7 +57,7 @@ while ($true) {
     }
 
     switch ($choice) {
-        "1" { Show-FlightControllerMenu }
+        "1" { Show-FlightControllerMenu -Config $appConfig }
         "2" { Show-RadioModuleMenu }
         "0" { return }
         default { Show-WrongInput -Menu "Main" }

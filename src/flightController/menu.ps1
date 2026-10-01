@@ -1,6 +1,11 @@
 # Основное меню и функции для работы с прошивкой полётного контроллера
 
 function Show-FlightControllerMenu {
+    param (
+        [Parameter(Mandatory)]
+        [pscustomobject]$Config
+    )
+
     while ($true) {
         Show-FlightControllerHeader
         Show-DeviceStatus
@@ -22,11 +27,11 @@ function Show-FlightControllerMenu {
         }
 
         switch ($choice) {
-            "1" { Invoke-FlightControllerFirmwareRead }
-            "2" { Invoke-FlightControllerFirmwareWrite }
-            "3" { Invoke-FlightControllerFirmwareErase }
-            "4" { Invoke-FlightControllerDFU }
-            "5" { Invoke-ImpulseRCDriverFixer }
+            "1" { Invoke-FlightControllerFirmwareRead -Config $Config }
+            "2" { Invoke-FlightControllerFirmwareWrite -Config $Config }
+            "3" { Invoke-FlightControllerFirmwareErase -Config $Config }
+            "4" { Invoke-FlightControllerDFU -Config $Config }
+            "5" { Invoke-ImpulseRCDriverFixer -Config $Config }
             "0" { return }
             default { Show-WrongInput -Menu "FlightController" }
         }
