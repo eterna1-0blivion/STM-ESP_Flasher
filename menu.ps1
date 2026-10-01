@@ -1,5 +1,5 @@
 # author: eterna1_0blivion
-$version = 'v0.0.7'
+$version = 'v0.0.7c'
 
 # Принудительно заставляем любую версию PowerShell работать в UTF-8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
