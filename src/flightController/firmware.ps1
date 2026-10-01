@@ -23,7 +23,7 @@ function Get-OpenFilePath {
 }
 
 # Read FW (Чтение с выбором пути сохранения)
-function Get-FlightControllerRead {
+function Invoke-FlightControllerFirmwareRead {
     $saveFile = Get-SaveFilePath
     if ($null -eq $saveFile) {
         Show-FlightControllerHeader
@@ -55,7 +55,7 @@ function Get-FlightControllerRead {
 }
 
 # Write FW (Запись через Проводник с автоматическим парсингом BIN/HEX)
-function Get-FlightControllerWrite {
+function Invoke-FlightControllerFirmwareWrite {
     $selectedFile = Get-OpenFilePath
     if ($null -eq $selectedFile) {
         Show-FlightControllerHeader
@@ -85,7 +85,7 @@ function Get-FlightControllerWrite {
 }
 
 # Erase FW
-function Get-FlightControllerErase {
+function Invoke-FlightControllerFirmwareErase {
     Show-FlightControllerWait
     & $stm32Tool -c port=usb1 -e all | Out-Null
             
@@ -99,7 +99,7 @@ function Get-FlightControllerErase {
 }
 
 # Управление режимом DFU
-function Get-FlightControllerDFU {
+function Invoke-FlightControllerDFU {
     Show-FlightControllerHeader
     Show-Message -Message "
     Управление состоянием контроллера:
@@ -134,7 +134,7 @@ function Get-FlightControllerDFU {
 }
 
 # Исправление драйверов ImpulseRC с чистой аппаратной проверкой
-function Get-FlightControllerImpulseRC {
+function Invoke-ImpulseRCDriverFixer {
     try {
         Show-FlightControllerWait
         Show-Message -Message "`nПодожди завершения работы утилиты ImpulseRC Driver Fixer." -Color "Gray"

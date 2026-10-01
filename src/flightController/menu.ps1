@@ -3,7 +3,7 @@
 function Show-FlightControllerMenu {
     while ($true) {
         Show-FlightControllerHeader
-        Get-DeviceStatus
+        Show-DeviceStatus
 
         Show-Message -Message @"
     1. ПРОЧИТАТЬ прошивку с полётного контроллера (Выбрать куда сохранить)
@@ -22,11 +22,11 @@ function Show-FlightControllerMenu {
         }
 
         switch ($choice) {
-            "1" { Get-FlightControllerRead }
-            "2" { Get-FlightControllerWrite }
-            "3" { Get-FlightControllerErase }
-            "4" { Get-FlightControllerDFU }
-            "5" { Get-FlightControllerImpulseRC }
+            "1" { Invoke-FlightControllerFirmwareRead }
+            "2" { Invoke-FlightControllerFirmwareWrite }
+            "3" { Invoke-FlightControllerFirmwareErase }
+            "4" { Invoke-FlightControllerDFU }
+            "5" { Invoke-ImpulseRCDriverFixer }
             "0" { return }
             default { Show-WrongInput -Menu "FlightController" }
         }
