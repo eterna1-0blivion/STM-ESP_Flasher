@@ -7,7 +7,8 @@ $Host.UI.RawUI.WindowTitle = "STM32 Mini-Flasher ($version)"; $Host.UI.RawUI.Bac
 # Корректное определение папки запуска для EXE и для обычного скрипта PS
 if ($MyInvocation.MyCommand.CommandType -eq "ExternalScript") {
     $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
-} else {
+}
+else {
     $scriptDir = [System.IO.Path]::GetDirectoryName([System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)
 }
 $currentDir = $scriptDir
@@ -16,8 +17,8 @@ $currentDir = $scriptDir
 function Show-Message {
     param (
         [string]$Message,
-        [ValidateSet("Black","DarkBlue","DarkGreen","DarkCyan","DarkRed","DarkMagenta",
-        "DarkYellow","Gray","DarkGray","Blue","Green","Cyan","Red","Magenta","Yellow","White")]
+        [ValidateSet("Black", "DarkBlue", "DarkGreen", "DarkCyan", "DarkRed", "DarkMagenta",
+            "DarkYellow", "Gray", "DarkGray", "Blue", "Green", "Cyan", "Red", "Magenta", "Yellow", "White")]
         [string]$Color = "White"
     )
     [Console]::ForegroundColor = [ConsoleColor]::$Color
@@ -72,11 +73,11 @@ function Select-FirmwareFile {
     if (Test-Path $defaultFile) { $fileMenu += "`n1. Стандартный файл: fw.bin" }
     
     $fileList = @()
-    if (Test-Path $defaultFile) { $fileList += ,$defaultFile }
+    if (Test-Path $defaultFile) { $fileList += , $defaultFile }
     
     $startIndex = $fileList.Count + 1
     for ($i = 0; $i -lt $binFiles.Count; $i++) {
-        $fileList += ,$binFiles[$i].FullName
+        $fileList += , $binFiles[$i].FullName
         $fileMenu += "`n$($startIndex + $i). $($binFiles[$i].Name)"
     }
     $fileMenu += "`n0. Отмена операции"
@@ -167,7 +168,8 @@ while ($true) {
             
             if ($LastExitCode -eq 0) {
                 Show-Message -Message "`nОперация выполнена - прошивка записана на полётник." -Color "Green"
-            } else {
+            }
+            else {
                 Show-Message -Message "`nПрошивка НЕ записана. Возможно, полётник не в режиме DFU." -Color "Yellow"
             }
             Show-Exit
@@ -180,7 +182,8 @@ while ($true) {
             
             if ($LastExitCode -eq 0) {
                 Show-Message -Message "`nОперация выполнена - прошивка на полётнике стёрта." -Color "Green"
-            } else {
+            }
+            else {
                 Show-Message -Message "`nПрошивка НЕ стёрта. Возможно, полётник не в режиме DFU." -Color "Yellow"
             }
             Show-Exit
@@ -207,13 +210,13 @@ while ($true) {
 
             if ($dfuChoice -eq "1") {
                 Show-Wait
-                & "$CurrentDir\bin\stm32pr.exe" -c port=usb1 -s | Out-Null
+                & "$currentDir\bin\stm32pr.exe" -c port=usb1 -s | Out-Null
                 Show-Message -Message "`nКоманда отправлена. Если плата поддерживает программный DFU, она переподключится." -Color "Green"
                 Show-Exit
             }
             elseif ($dfuChoice -eq "2") {
                 Show-Wait
-                & "$CurrentDir\bin\stm32pr.exe" -c port=usb1 -g 0x08000000 | Out-Null
+                & "$currentDir\bin\stm32pr.exe" -c port=usb1 -g 0x08000000 | Out-Null
                 Show-Message -Message "`nКоманда выхода отправлена. Плата перезагружается в рабочий режим." -Color "Green"
                 Show-Exit
             }
@@ -226,7 +229,7 @@ while ($true) {
          # Исправление драйверов ImpulseRC с аппаратной проверкой результата
         "5" {
             Show-Wait
-            $DriverTool = Join-Path $ScriptDir "ImpulseRC.exe"
+            $DriverTool = Join-Path $scriptDir "ImpulseRC.exe"
             
             try {
                 Show-Message -Message "Запуск ImpulseRC Driver Fixer... Пожалуйста, подожди завершения работы утилиты." -Color "Gray"
