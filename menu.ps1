@@ -201,7 +201,7 @@ while ($true) {
             Show-Exit
         }
 
-            # Управление режимом DFU
+        # Управление режимом DFU
         "4" {
             Show-Header
             Show-Message -Message "
@@ -215,7 +215,6 @@ while ($true) {
             Show-Input "> Выбери действие [0-2]: "
             $dfuChoice = [Console]::ReadLine()
 
-            # Если выбрали Назад, мгновенно прыгаем в начало главного цикла while
             if ($dfuChoice -eq "0") {
                 continue
             }
@@ -238,7 +237,7 @@ while ($true) {
             }
         }
 
-         # Исправление драйверов ImpulseRC с аппаратной проверкой результата
+        # Исправление драйверов ImpulseRC с чистой аппаратной проверкой
         "5" {
             Show-Wait
             $DriverTool = Join-Path $scriptDir "ImpulseRC.exe"
@@ -246,14 +245,13 @@ while ($true) {
             try {
                 Show-Message -Message "Запуск ImpulseRC Driver Fixer... Пожалуйста, подожди завершения работы утилиты." -Color "Gray"
                 
-                # 1. Фиксируем, было ли DFU устройство в системе ДО запуска
+                # 1. Фиксируем статус DFU устройства ДО запуска
                 $dfuBefore = Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*DFU*" -or $_.InstanceId -like "*USB\VID_0483&PID_DF11*" }
                 $hadDfu = $null -ne $dfuBefore
 
                 # 2. Запускаем процесс и ждем его закрытия
                 $proc = Start-Process $DriverTool -PassThru -Wait
-                
-                # Небольшая пауза для Chrome и для того, чтобы Windows обновила список оборудования
+                # Короткая пауза для обновления конфигурации оборудования операционной системой
                 Start-Sleep -Seconds 3
                 
                 # Глушим паразитные окна Chrome
@@ -265,22 +263,17 @@ while ($true) {
                 # 3. Делаем повторный аппаратный опрос системы ПОСЛЕ закрытия утилиты
                 $dfuAfter = Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*DFU*" -or $_.InstanceId -like "*USB\VID_0483&PID_DF11*" }
                 $hasDfuNow = $null -ne $dfuAfter
-
                 # 4. Анализируем реальное изменение конфигурации железа
                 if ($proc.ExitCode -ne 0) {
-                    # Если сама ОС выдала ошибку запуска (например, файл поврежден)
-                    Show-Message -Message "`nУтилита ImpulseRC Driver Fixer завершила работу с системной ошибкой: $($proc.ExitCode)." -Color "Red"
+                    Show-Message -Message "`n[ОШИБКА]: Утилита ImpulseRC Driver Fixer завершила работу с системной ошибкой: $($proc.ExitCode)." -Color "Red"
                 }
                 elseif ($hasDfuNow) {
-                    # Если устройство в режиме DFU сейчас физически существует в диспетчере задач
                     Show-Message -Message "`n[УСПЕХ]: Полётник успешно переведён в режим DFU и готов к прошивке!" -Color "Green"
                 }
                 elseif ($hadDfu -and -not $hasDfuNow) {
-                    # Редкий случай: устройство было в DFU, но после утилиты пропало
-                    Show-Message -Message "`n[СТАТУС]: Полётник отключился или вышел из режима DFU после работы утилиты." -Color "Yellow"
+                    Show-Message -Message "`n[ОШИБКА]: Полётник отключился или вышел из режима DFU после работы утилиты." -Color "Red"
                 }
                 else {
-                    # Единственный логический вывод: DFU как не было, так и нет. Значит, утилиту закрыли вручную или она зависла
                     Show-Message -Message "`n[ОТМЕНА]: Изменений в драйверах не обнаружено. Возможно, утилита была закрыта вручную." -Color "Yellow"
                 }
             }
