@@ -148,8 +148,16 @@ while ($true) {
             & "$currentDir\bin\stm32pr.exe" -c port=usb1 -r 0x08000000 0x100000 "$TargetFile" | Out-Null
 
             if (Test-Path $TargetFile) {
-                Show-Message -Message "`nОперация выполнена - прошивка 'fw.bin' находится в папке программы." -Color "Green"                
-            } else {
+                $fileSize = (Get-Item $TargetFile).Length
+                if ($fileSize -gt 0) {
+                    Show-Message -Message "`nОперация выполнена - прошивка 'fw.bin' находится в папке программы." -Color "Green"                
+                }
+                else {
+                    Remove-Item $TargetFile -Force -ErrorAction SilentlyContinue
+                    Show-Message -Message "`nОшибка! Скачанный файл оказался пустым (0 КБ). Прошивка не сохранена." -Color "Red"
+                }
+            }
+            else {
                 Show-Message -Message "`nПрошивка НЕ сохранена. Возможно, полётник не в режиме DFU." -Color "Yellow"
             }
             Show-Exit
