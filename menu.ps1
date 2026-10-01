@@ -48,6 +48,9 @@ function Show-Input {
 
 # Кроссплатформенный опрос оборудования с защитой от ложных срабатываний (Component)
 function Get-DeviceStatus {
+    # Сначала говорим пользователю, что программа думает
+    Show-Message -Message "Поиск подключенного оборудования..." -Color "Gray"
+    
     $allDevices = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction SilentlyContinue
     
     # Фильтруем строго по вхождению "(COM" с открывающей скобкой, чтобы отсечь сторонние компоненты
@@ -79,10 +82,7 @@ function Get-SaveFilePath {
     $dialog.Filter = "Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex"
     $dialog.FileName = "fw.bin"
     $dialog.ValidateNames = $true
-    
-    if ($dialog.ShowDialog() -eq $true) {
-        return $dialog.FileName
-    }
+    if ($dialog.ShowDialog() -eq $true) { return $dialog.FileName }
     return $null
 }
 
@@ -92,10 +92,7 @@ function Get-OpenFilePath {
     $dialog.InitialDirectory = $scriptDir
     $dialog.Title = "Выбери файл прошивки для записи на полётник"
     $dialog.Filter = "Файлы прошивок (*.bin;*.hex)|*.bin;*.hex|Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex"
-    
-    if ($dialog.ShowDialog() -eq $true) {
-        return $dialog.FileName
-    }
+    if ($dialog.ShowDialog() -eq $true) { return $dialog.FileName }
     return $null
 }
 
