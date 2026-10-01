@@ -9,6 +9,30 @@
 . (Join-Path $PSScriptRoot "..\src\flightController\devices.ps1")
 . (Join-Path $PSScriptRoot "..\src\flightController\firmware.ps1")
 
+Describe "Show-Message line breaks" {
+    It "starts a new line only when the NewLine switch is provided" {
+        $originalWriter = [Console]::Out
+        $writer = New-Object System.IO.StringWriter
+
+        try {
+            [Console]::SetOut($writer)
+            Show-Message -Message "Test message" -Level "Status" -NewLine
+            $withNewLine = $writer.ToString()
+
+            $writer.GetStringBuilder().Clear() | Out-Null
+            Show-Message -Message "Test message" -Level "Status"
+            $withoutNewLine = $writer.ToString()
+        }
+        finally {
+            [Console]::SetOut($originalWriter)
+            $writer.Dispose()
+        }
+
+        $withNewLine | Should Be ([Environment]::NewLine + "[СТАТУС] Test message" + [Environment]::NewLine)
+        $withoutNewLine | Should Be ("[СТАТУС] Test message" + [Environment]::NewLine)
+    }
+}
+
 Describe "STM32 DFU device detection" {
     It "accepts the STM32 bootloader VID/PID and ignores unrelated DFU-named devices" {
         Mock Get-CimInstance {
