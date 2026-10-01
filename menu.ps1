@@ -1,5 +1,5 @@
 # author: eterna1_0blivion
-$version = 'v0.0.8'
+$version = 'v0.0.8a'
 
 # Принудительно заставляем любую версию PowerShell работать в UTF-8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -91,7 +91,7 @@ function Get-OpenFilePath {
     $dialog = New-Object Microsoft.Win32.OpenFileDialog
     $dialog.InitialDirectory = $scriptDir
     $dialog.Title = "Выбери файл прошивки для записи на полётник"
-    $dialog.Filter = "Файлы прошивок (*.bin;*.hex)|*.bin;*.hex|Сырой дамп (*.bin)|*.bin|Intel HEX (*.hex)|*.hex"
+    $dialog.Filter = "Файлы прошивок (*.bin;*.hex)|*.bin;*.hex|Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex"
     
     if ($dialog.ShowDialog() -eq $true) {
         return $dialog.FileName
