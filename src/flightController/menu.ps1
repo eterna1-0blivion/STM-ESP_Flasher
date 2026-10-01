@@ -25,7 +25,7 @@ function Show-FlightControllerMenu {
             "4" { Get-FlightControllerDFU }
             "5" { Get-FlightControllerImpulseRC }
             "0" { return }
-            default { Show-WrongInput }
+            default { Show-WrongInput -Menu "FlightController" }
         }
     }
 }

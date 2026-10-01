@@ -32,6 +32,18 @@ function Show-Exit {
 }
 
 function Show-WrongInput {
+    param (
+        [Parameter(Mandatory)]
+        [ValidateSet("Main", "FlightController", "RadioModule")]
+        [string]$Menu
+    )
+
+    switch ($Menu) {
+        "Main" { Show-MainHeader }
+        "FlightController" { Show-FlightControllerHeader }
+        "RadioModule" { Show-RadioModuleHeader }
+    }
+
     Show-Message -Message "`nТакого пункта не предусмотрено." -Color "Yellow"
     Show-Exit
 }

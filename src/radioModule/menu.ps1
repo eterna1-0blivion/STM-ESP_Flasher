@@ -16,7 +16,7 @@ function Show-RadioModuleMenu {
 
         switch ($choice) {
             "0" { return }
-            default { Show-WrongInput }
+            default { Show-WrongInput -Menu "RadioModule" }
         }
     }
 }

@@ -129,7 +129,7 @@ function Get-FlightControllerDFU {
         Show-Exit
     }
     else {
-        Show-WrongInput
+        Show-WrongInput -Menu "FlightController"
     }
 }
 

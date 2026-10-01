@@ -1,5 +1,5 @@
 # author: eterna1_0blivion
-$version = 'v0.1.0'
+$version = 'v0.1.1'
 
 # *Способы компиляции в .exe*: Подумать над альтернативами взамен долгого запуска через SFX.
 # *Раздел ESPtool*: Реализовать связку с ESPtool для работы с модулями управления.
@@ -56,6 +56,6 @@ while ($true) {
         "1" { Show-FlightControllerMenu }
         "2" { Show-RadioModuleMenu }
         "0" { exit }
-        default { Show-WrongInput }
+        default { Show-WrongInput -Menu "Main" }
     }
 }
