@@ -221,3 +221,70 @@ Describe "STM32 CLI launch validation" {
         $result.Error | Should Match "не найден"
     }
 }
+
+Describe "STM32 runtime dependency lookup" {
+    It "skips an incomplete compiler runtime earlier in PATH and finds the complete programmer runtime" {
+        $originalPath = $env:PATH
+        $toolDirectory = Join-Path $TestDrive "application-bin"
+        $compilerDirectory = Join-Path $TestDrive "compiler-bin"
+        $runtimeDirectory = Join-Path $TestDrive "programmer-bin"
+        $null = New-Item -ItemType Directory -Path $toolDirectory, $compilerDirectory, $runtimeDirectory -Force
+
+        foreach ($fileName in "libstdc++-6.dll", "libgcc_s_seh-1.dll", "libwinpthread-1.dll") {
+            Set-Content -LiteralPath (Join-Path $compilerDirectory $fileName) -Value "compiler runtime"
+        }
+        foreach ($fileName in "Qt6Core.dll", "Qt6Xml.dll", "libstdc++-6.dll", "libgcc_s_seh-1.dll", "libwinpthread-1.dll") {
+            Set-Content -LiteralPath (Join-Path $runtimeDirectory $fileName) -Value "programmer runtime"
+        }
+
+        try {
+            $env:PATH = "$compilerDirectory;$runtimeDirectory"
+            $runtime = Get-Stm32RuntimeDirectory -ToolPath (Join-Path $toolDirectory "STM32_Programmer_CLI.exe")
+        }
+        finally {
+            $env:PATH = $originalPath
+        }
+
+        $runtime | Should Be $runtimeDirectory
+    }
+
+    It "does not accept a runtime folder missing required DLLs" {
+        $originalPath = $env:PATH
+        $incompleteDirectory = Join-Path $TestDrive "incomplete-bin"
+        $null = New-Item -ItemType Directory -Path $incompleteDirectory -Force
+        Set-Content -LiteralPath (Join-Path $incompleteDirectory "Qt6Core.dll") -Value "only one library"
+
+        try {
+            $env:PATH = $incompleteDirectory
+            $runtime = Get-Stm32RuntimeDirectory -ToolPath (Join-Path $incompleteDirectory "STM32_Programmer_CLI.exe")
+        }
+        finally {
+            $env:PATH = $originalPath
+        }
+
+        $runtime | Should Be $null
+    }
+
+    It "refuses to launch the CLI when its runtime set is incomplete" {
+        $originalPath = $env:PATH
+        $toolDirectory = Join-Path $TestDrive "cli-without-runtime"
+        $null = New-Item -ItemType Directory -Path $toolDirectory -Force
+        $toolPath = Join-Path $toolDirectory "STM32_Programmer_CLI.exe"
+        Set-Content -LiteralPath $toolPath -Value "placeholder"
+        $config = [pscustomobject]@{
+            STM32ProgrammerPath = $toolPath
+        }
+
+        try {
+            $env:PATH = $toolDirectory
+            $result = Invoke-Stm32Command -Config $config -Arguments @("-h")
+        }
+        finally {
+            $env:PATH = $originalPath
+        }
+
+        $result.Succeeded | Should Be $false
+        $result.ExitCode | Should Be $null
+        $result.Error | Should Match "Не найден полный совместимый набор DLL"
+    }
+}
