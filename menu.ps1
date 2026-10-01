@@ -5,6 +5,9 @@ $version = 'v0.0.7'
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
 
+# Подгружаем сборку графических диалогов WPF для совместимости с PowerShell 5.0
+Add-Type -AssemblyName PresentationFramework -ErrorAction SilentlyContinue
+
 # Устанавливаем заголовок консоли, меняем задний фон
 $Host.UI.RawUI.WindowTitle = "STM32 Mini-Flasher ($version)"
 $Host.UI.RawUI.BackgroundColor = "Black"
@@ -18,9 +21,6 @@ else {
     $scriptDir = [System.IO.Path]::GetDirectoryName([System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName)
 }
 $currentDir = $scriptDir
-
-# Подгружаем системную графическую библиотеку для работы с окнами Windows
-Add-Type -AssemblyName System.Windows.Forms
 
 # Вывод сообщений в консоль
 function Show-Message {
@@ -68,32 +68,28 @@ function Get-DeviceStatus {
     Show-Message -Message "---------------------------------------------------------" -Color "DarkGray"
 }
 
-# Интерактивное окно сохранения файла прошивки через Проводник Windows
+# Нативный диалог сохранения Windows (Высокая четкость DPI и поддержка Темной темы)
 function Get-SaveFilePath {
-    $dialog = New-Object System.Windows.Forms.SaveFileDialog
+    $dialog = New-Object Microsoft.Win32.SaveFileDialog
     $dialog.InitialDirectory = $scriptDir
     $dialog.Title = "Выбери, куда сохранить считанную прошивку"
     $dialog.Filter = "Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex"
-    $dialog.FileName = "fw.bin" # имя по умолчанию
+    $dialog.FileName = "fw.bin"
     
-    # Показываем окно поверх консоли
-    $result = $dialog.ShowDialog((New-Object System.Windows.Forms.NativeWindow))
-    if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+    if ($dialog.ShowDialog() -eq $true) {
         return $dialog.FileName
     }
     return $null
 }
 
-# Интерактивное окно выбора файла для записи через Проводник Windows
+# Нативный диалог открытия Windows (Высокая четкость DPI и поддержка Темной темы)
 function Get-OpenFilePath {
-    $dialog = New-Object System.Windows.Forms.OpenFileDialog
+    $dialog = New-Object Microsoft.Win32.OpenFileDialog
     $dialog.InitialDirectory = $scriptDir
     $dialog.Title = "Выбери файл прошивки для записи на полётник"
-    # Добавлена полная поддержка BIN и HEX стандартов Betaflight
     $dialog.Filter = "Файлы прошивок (*.bin;*.hex)|*.bin;*.hex|Сырой дамп (*.bin)|*.bin|Intel HEX (*.hex)|*.hex"
     
-    $result = $dialog.ShowDialog((New-Object System.Windows.Forms.NativeWindow))
-    if ($result -eq [System.Windows.Forms.DialogResult]::OK) {
+    if ($dialog.ShowDialog() -eq $true) {
         return $dialog.FileName
     }
     return $null
