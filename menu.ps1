@@ -70,7 +70,10 @@ function Select-FirmwareFile {
 
     Show-Header
     $fileMenu = "`nВ папке программы найдены файлы прошивок. Выбери нужный:`n"
-    if (Test-Path $defaultFile) { $fileMenu += "`n1. Стандартный файл: fw.bin" }
+    if (Test-Path $defaultFile) { 
+        $defTime = (Get-Item $defaultFile).LastWriteTime.ToString("dd.MM.yyyy HH:mm")
+        $fileMenu += "`n1. Стандартный файл: fw.bin [$defTime]" 
+    }
     
     $fileList = @()
     if (Test-Path $defaultFile) { $fileList += , $defaultFile }
@@ -78,7 +81,8 @@ function Select-FirmwareFile {
     $startIndex = $fileList.Count + 1
     for ($i = 0; $i -lt $binFiles.Count; $i++) {
         $fileList += , $binFiles[$i].FullName
-        $fileMenu += "`n$($startIndex + $i). $($binFiles[$i].Name)"
+        $fileTime = $binFiles[$i].LastWriteTime.ToString("dd.MM.yyyy HH:mm")
+        $fileMenu += "`n$($startIndex + $i). $($binFiles[$i].Name) [$fileTime]"
     }
     $fileMenu += "`n0. Отмена операции"
     
