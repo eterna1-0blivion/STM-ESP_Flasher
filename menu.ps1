@@ -248,18 +248,10 @@ while ($true) {
                 # 1. Фиксируем статус DFU устройства ДО запуска
                 $dfuBefore = Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*DFU*" -or $_.InstanceId -like "*USB\VID_0483&PID_DF11*" }
                 $hadDfu = $null -ne $dfuBefore
-
                 # 2. Запускаем процесс и ждем его закрытия
                 $proc = Start-Process $DriverTool -PassThru -Wait
                 # Короткая пауза для обновления конфигурации оборудования операционной системой
                 Start-Sleep -Seconds 3
-                
-                # Глушим паразитные окна Chrome
-                $parasiteWindows = Get-Process -Name "chrome" -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -like "*Warning*" -or $_.MainWindowTitle -like "*Предупреждение*" }
-                if ($parasiteWindows) {
-                    $parasiteWindows | Stop-Process -Force -ErrorAction SilentlyContinue
-                }
-
                 # 3. Делаем повторный аппаратный опрос системы ПОСЛЕ закрытия утилиты
                 $dfuAfter = Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*DFU*" -or $_.InstanceId -like "*USB\VID_0483&PID_DF11*" }
                 $hasDfuNow = $null -ne $dfuAfter
