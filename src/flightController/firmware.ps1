@@ -31,6 +31,50 @@ function Get-OpenFilePath {
     return $null
 }
 
+function Get-Stm32RuntimeDirectory {
+    param (
+        [Parameter(Mandatory)]
+        [string]$ToolPath
+    )
+
+    $candidateDirectories = @(
+        (Split-Path -Parent $ToolPath)
+        $env:PATH -split [System.IO.Path]::PathSeparator
+    ) | Where-Object { $_ } | Select-Object -Unique
+
+    $requiredFiles = @(
+        "Qt6Core.dll",
+        "Qt6Xml.dll",
+        "libstdc++-6.dll",
+        "libgcc_s_seh-1.dll",
+        "libwinpthread-1.dll"
+    )
+
+    foreach ($directory in $candidateDirectories) {
+        $hasAllRuntimeFiles = $true
+        foreach ($fileName in $requiredFiles) {
+            if (-not (Test-Path -LiteralPath (Join-Path $directory $fileName) -PathType Leaf)) {
+                $hasAllRuntimeFiles = $false
+                break
+            }
+        }
+
+        if (-not $hasAllRuntimeFiles) {
+            continue
+        }
+
+        $coreVersion = (Get-Item -LiteralPath (Join-Path $directory "Qt6Core.dll")).VersionInfo.FileVersion
+        $xmlVersion = (Get-Item -LiteralPath (Join-Path $directory "Qt6Xml.dll")).VersionInfo.FileVersion
+        if ($coreVersion -and $xmlVersion -and $coreVersion -ne $xmlVersion) {
+            continue
+        }
+
+        return $directory
+    }
+
+    return $null
+}
+
 function Invoke-Stm32Command {
     param (
         [Parameter(Mandatory)]
@@ -49,7 +93,21 @@ function Invoke-Stm32Command {
         }
     }
 
+    $runtimeDirectory = Get-Stm32RuntimeDirectory -ToolPath $toolPath
+    if (-not $runtimeDirectory) {
+        return [pscustomobject]@{
+            Succeeded = $false
+            ExitCode  = $null
+            Output    = @()
+            Error     = "Не найден полный совместимый набор DLL для STM32CubeProgrammer. Не копируйте только STM32_Programmer_CLI.exe: разместите рядом с ним Qt6Core.dll, Qt6Xml.dll, libstdc++-6.dll, libgcc_s_seh-1.dll и libwinpthread-1.dll из одной папки bin одной версии."
+        }
+    }
+
+    $originalPath = $env:PATH
     try {
+        # STM32CubeCLT и Programmer могут поставлять разные libstdc++/libwinpthread.
+        # Ставим DLL из каталога найденной установки раньше остальных записей PATH.
+        $env:PATH = "$runtimeDirectory;$originalPath"
         $output = @(& $toolPath @Arguments 2>&1 | ForEach-Object { $_.ToString() })
         $exitCode = $LASTEXITCODE
 
@@ -67,6 +125,9 @@ function Invoke-Stm32Command {
             Output    = @()
             Error     = $_.Exception.Message
         }
+    }
+    finally {
+        $env:PATH = $originalPath
     }
 }
 
