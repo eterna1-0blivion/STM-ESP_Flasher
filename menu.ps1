@@ -97,7 +97,7 @@ function Select-FirmwareFile {
         if ([int]::TryParse($fChoice, [ref]$parsedIndex) -and $parsedIndex -le $fileList.Count -and $parsedIndex -gt 0) {
             return $fileList[$parsedIndex - 1]
         }
-        Show-Message -Message "Неверный выбор. Попробуй еще раз." -Color "Yellow"
+        Show-Message -Message "Команда не найдена. Попробуй другую." -Color "Yellow"
     }
 }
 
@@ -158,7 +158,7 @@ while ($true) {
                 }
             }
             else {
-                Show-Message -Message "`nПрошивка НЕ сохранена. Возможно, полётник не в режиме DFU." -Color "Yellow"
+                Show-Message -Message "`nПрошивка НЕ сохранена. Возможно, полётник не в режиме DFU (попробуй запустить ImpulseRC)" -Color "Yellow"
             }
             Show-Exit
         }
@@ -182,7 +182,7 @@ while ($true) {
                 Show-Message -Message "`nОперация выполнена - прошивка записана на полётник." -Color "Green"
             }
             else {
-                Show-Message -Message "`nПрошивка НЕ записана. Возможно, полётник не в режиме DFU." -Color "Yellow"
+                Show-Message -Message "`nПрошивка НЕ записана. Возможно, полётник не в режиме DFU (попробуй запустить ImpulseRC)" -Color "Yellow"
             }
             Show-Exit
         }
@@ -196,7 +196,7 @@ while ($true) {
                 Show-Message -Message "`nОперация выполнена - прошивка на полётнике стёрта." -Color "Green"
             }
             else {
-                Show-Message -Message "`nПрошивка НЕ стёрта. Возможно, полётник не в режиме DFU." -Color "Yellow"
+                Show-Message -Message "`nПрошивка НЕ стёрта. Возможно, полётник не в режиме DFU (попробуй запустить ImpulseRC)" -Color "Yellow"
             }
             Show-Exit
         }
