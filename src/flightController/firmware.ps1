@@ -26,13 +26,13 @@ function Get-OpenFilePath {
 function Get-FlightControllerRead {
     $saveFile = Get-SaveFilePath
     if ($null -eq $saveFile) {
-        Show-Header
+        Show-FlightControllerHeader
         Show-Message -Message "`nОперация отменена пользователем." -Color "Yellow"
         Show-Exit
         continue
     }
 
-    Show-Wait
+    Show-FlightControllerWait
     if (Test-Path $saveFile) { Remove-Item $saveFile -Force -ErrorAction SilentlyContinue }
             
     & $stm32Tool -c port=usb1 -r 0x08000000 0x80000 "$saveFile" | Out-Null
@@ -58,13 +58,13 @@ function Get-FlightControllerRead {
 function Get-FlightControllerWrite {
     $selectedFile = Get-OpenFilePath
     if ($null -eq $selectedFile) {
-        Show-Header
+        Show-FlightControllerHeader
         Show-Message -Message "`nОперация отменена пользователем." -Color "Yellow"
         Show-Exit
         continue
     }
 
-    Show-Wait
+    Show-FlightControllerWait
     Show-Message -Message "Запись файла: $(Split-Path $selectedFile -Leaf)" -Color "Gray"
     $extension = [System.IO.Path]::GetExtension($selectedFile).ToLower()
 
@@ -86,7 +86,7 @@ function Get-FlightControllerWrite {
 
 # Erase FW
 function Get-FlightControllerErase {
-    Show-Wait
+    Show-FlightControllerWait
     & $stm32Tool -c port=usb1 -e all | Out-Null
             
     if ($LastExitCode -eq 0) {
@@ -100,7 +100,7 @@ function Get-FlightControllerErase {
 
 # Управление режимом DFU
 function Get-FlightControllerDFU {
-    Show-Header
+    Show-FlightControllerHeader
     Show-Message -Message "
     Управление состоянием контроллера:
 
@@ -117,30 +117,28 @@ function Get-FlightControllerDFU {
     }
 
     if ($dfuChoice -eq "1") {
-        Show-Wait
+        Show-FlightControllerWait
         & $stm32Tool -c port=usb1 -s | Out-Null
         Show-Message -Message "`nКоманда отправлена. Если плата поддерживает программный DFU, она переподключится." -Color "Green"
         Show-Exit
     }
     elseif ($dfuChoice -eq "2") {
-        Show-Wait
+        Show-FlightControllerWait
         & $stm32Tool -c port=usb1 -g 0x08000000 | Out-Null
         Show-Message -Message "`nКоманда выхода отправлена. Плата перезагружается в рабочий режим." -Color "Green"
         Show-Exit
     }
     else {
-        Show-Message -Message "`nНеверный ввод. Возврат в меню..." -Color "Yellow"
-        Show-Exit
+        Show-WrongInput
     }
 }
 
 # Исправление драйверов ImpulseRC с чистой аппаратной проверкой
 function Get-FlightControllerImpulseRC {
-    Show-Wait
-            
     try {
-        Show-Message -Message "Запуск ImpulseRC Driver Fixer... Пожалуйста, подожди завершения работы утилиты." -Color "Gray"
-                
+        Show-FlightControllerWait
+        Show-Message -Message "`nПодожди завершения работы утилиты ImpulseRC Driver Fixer." -Color "Gray"
+        
         # 1. Фиксируем статус DFU устройства ДО запуска через универсальный CIM
         $allDevsBefore = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction SilentlyContinue
         $dfuBefore = $allDevsBefore | Where-Object { $_.Present -and ($_.Name -like "*DFU*" -or $_.DeviceID -like "*VID_0483&PID_DF11*") }

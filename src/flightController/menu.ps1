@@ -2,7 +2,7 @@
 
 function Show-FlightControllerMenu {
     while ($true) {
-        Show-Header
+        Show-FlightControllerHeader
         Get-DeviceStatus
 
         Show-Message -Message @"
@@ -25,10 +25,7 @@ function Show-FlightControllerMenu {
             "4" { Get-FlightControllerDFU }
             "5" { Get-FlightControllerImpulseRC }
             "0" { return }
-            default {
-                Show-Message -Message "Такого пункта не предусмотрено." -Color "Yellow"
-                Show-Exit
-            }
+            default { Show-WrongInput }
         }
     }
 }

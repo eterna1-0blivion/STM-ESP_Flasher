@@ -10,8 +10,8 @@ function Get-DeviceStatus {
     $comDevices = $allDevices | Where-Object { $_.Present -and ($_.Name -like "*STMicroelectronics*" -or $_.Name -like "*(COM*") }
     $dfuDevices = $allDevices | Where-Object { $_.Present -and ($_.Name -like "*DFU*" -or $_.DeviceID -like "*VID_0483&PID_DF11*") }
 
-    Show-Header
-    Show-Message -Message "---------------------------------------------------------" -Color "DarkGray"
+    Show-FlightControllerHeader
+    Show-Separator
     if ($comDevices) {
         foreach ($dev in $comDevices) {
             Show-Message -Message "[СТАТУС] Обнаружен полётник в обычном режиме: $($dev.Name)" -Color "Cyan"
@@ -25,5 +25,5 @@ function Get-DeviceStatus {
     if (-not $comDevices -and -not $dfuDevices) {
         Show-Message -Message "[СТАТУС] Полётный контроллер не обнаружен." -Color "DarkYellow"
     }
-    Show-Message -Message "---------------------------------------------------------" -Color "DarkGray"
+    Show-Separator
 }

@@ -21,12 +21,44 @@ function Show-Input {
     [Console]::Write("$Message")
 }
 
-function Show-Wait {
-    Show-Header
+function Show-FlightControllerWait {
+    Show-FlightControllerHeader
     Show-Message -Message "`nПрограмма выполняется..." -Color "Gray"
 }
 
 function Show-Exit {
     Show-Message -Message "`n> Нажми любую клавишу для возврата в меню..." -Color "White"
     $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+}
+
+function Show-WrongInput {
+    Show-Message -Message "`nТакого пункта не предусмотрено." -Color "Yellow"
+    Show-Exit
+}
+
+function Show-MainHeader {
+    Clear-Host
+    Show-Message -Message @"
+==========   Меню FPV-Flasher   ==========
+"@ -Color "Cyan"
+}
+
+function Show-FlightControllerHeader {
+    Clear-Host
+    Show-Message -Message @"
+==========   Работа с полётным контроллером   ==========
+"@ -Color "Cyan"
+}
+
+function Show-RadioModuleHeader {
+    Clear-Host
+    Show-Message -Message @"
+==========   Работа с модулем управления   ==========
+"@ -Color "Cyan"
+}
+
+function Show-Separator {
+    Show-Message -Message @"
+------------------------------------------------------------
+"@ -Color "DarkGray"
 }

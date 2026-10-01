@@ -17,23 +17,6 @@ $Host.UI.RawUI.WindowTitle = "FPV-Flasher ($version)"
 $Host.UI.RawUI.BackgroundColor = "Black"
 Clear-Host
 
-function Show-Header {
-    Clear-Host
-    Show-Message -Message "=== FPV-Flasher ($version) ===" -Color "Cyan"
-}
-
-function Show-MainMenu {
-    Show-Header
-    Show-Message -Message @"
-    1. Работа с полётным контроллером (STM32)
-    2. Работа с модулями управления (ESPtool)
-
-    0. Выход из программы
-"@ -Color "White"
-
-    Show-Input "`n> Введи команду [0-2]: "
-}
-
 # Корректное определение папки запуска для EXE и для обычного скрипта PS
 if ($MyInvocation.MyCommand.CommandType -eq "ExternalScript") {
     $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Definition
@@ -52,6 +35,19 @@ $driverTool = Join-Path $scriptDir "files\ImpulseRC_Driver_Fixer.exe"
 . (Join-Path $scriptDir "src\flightController\menu.ps1")
 . (Join-Path $scriptDir "src\radioModule\menu.ps1")
 
+function Show-MainMenu {
+    Show-MainHeader
+    Show-Separator
+    Show-Message -Message @"
+    1. Работа с полётным контроллером (STM32)
+    2. Работа с модулями управления (ESPtool)
+
+    0. Выход из программы
+"@ -Color "White"
+
+    Show-Input "`n> Введи команду [0-2]: "
+}
+
 while ($true) {
     Show-MainMenu
     $choice = [Console]::ReadLine()
@@ -60,9 +56,6 @@ while ($true) {
         "1" { Show-FlightControllerMenu }
         "2" { Show-RadioModuleMenu }
         "0" { exit }
-        default {
-            Show-Message -Message "Такого пункта не предусмотрено." -Color "Yellow"
-            Show-Exit
-        }
+        default { Show-WrongInput }
     }
 }
