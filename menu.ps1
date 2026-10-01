@@ -1,5 +1,5 @@
 # author: eterna1_0blivion
-$version = 'v0.0.7c'
+$version = 'v0.0.8'
 
 # Принудительно заставляем любую версию PowerShell работать в UTF-8
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
@@ -71,13 +71,14 @@ function Get-DeviceStatus {
     Show-Message -Message "---------------------------------------------------------" -Color "DarkGray"
 }
 
-# Нативный диалог сохранения Windows (Высокая четкость DPI и поддержка Темной темы)
+# Нативный диалог сохранения Windows
 function Get-SaveFilePath {
     $dialog = New-Object Microsoft.Win32.SaveFileDialog
     $dialog.InitialDirectory = $scriptDir
     $dialog.Title = "Выбери, куда сохранить считанную прошивку"
     $dialog.Filter = "Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex"
     $dialog.FileName = "fw.bin"
+    $dialog.ValidateNames = $true
     
     if ($dialog.ShowDialog() -eq $true) {
         return $dialog.FileName
@@ -85,7 +86,7 @@ function Get-SaveFilePath {
     return $null
 }
 
-# Нативный диалог открытия Windows (Высокая четкость DPI и поддержка Темной темы)
+# Нативный диалог открытия Windows (Высокая чёткость DPI и поддержка Темной темы)
 function Get-OpenFilePath {
     $dialog = New-Object Microsoft.Win32.OpenFileDialog
     $dialog.InitialDirectory = $scriptDir
