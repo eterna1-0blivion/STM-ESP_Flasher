@@ -233,7 +233,7 @@ Describe "STM32 runtime dependency lookup" {
         foreach ($fileName in "libstdc++-6.dll", "libgcc_s_seh-1.dll", "libwinpthread-1.dll") {
             Set-Content -LiteralPath (Join-Path $compilerDirectory $fileName) -Value "compiler runtime"
         }
-        foreach ($fileName in "Qt6Core.dll", "Qt6Xml.dll", "libstdc++-6.dll", "libgcc_s_seh-1.dll", "libwinpthread-1.dll") {
+        foreach ($fileName in "Qt6Core.dll", "Qt6Network.dll", "Qt6Qml.dll", "Qt6SerialPort.dll", "Qt6Xml.dll", "libcrypto-3-x64.dll", "liblzma-5.dll", "libminizip.dll", "libstdc++-6.dll", "libgcc_s_seh-1.dll", "libwinpthread-1.dll", "libzstd.dll") {
             Set-Content -LiteralPath (Join-Path $runtimeDirectory $fileName) -Value "programmer runtime"
         }
 
