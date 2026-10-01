@@ -29,7 +29,7 @@ function Get-FlightControllerRead {
         Show-FlightControllerHeader
         Show-Message -Message "`nОперация отменена пользователем." -Color "Yellow"
         Show-Exit
-        continue
+        return
     }
 
     Show-FlightControllerWait
@@ -61,7 +61,7 @@ function Get-FlightControllerWrite {
         Show-FlightControllerHeader
         Show-Message -Message "`nОперация отменена пользователем." -Color "Yellow"
         Show-Exit
-        continue
+        return
     }
 
     Show-FlightControllerWait
@@ -112,8 +112,8 @@ function Get-FlightControllerDFU {
     Show-Input "> Выбери действие [0-2]: "
     $dfuChoice = [Console]::ReadLine()
 
-    if ($dfuChoice -eq "0") {
-        continue
+    if ($null -eq $dfuChoice -or $dfuChoice -eq "0") {
+        return
     }
 
     if ($dfuChoice -eq "1") {
@@ -140,7 +140,7 @@ function Get-FlightControllerImpulseRC {
         Show-Message -Message "`nПодожди завершения работы утилиты ImpulseRC Driver Fixer." -Color "Gray"
         
         # 1. Фиксируем статус DFU устройства ДО запуска через универсальный CIM
-        $allDevsBefore = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction SilentlyContinue
+        $allDevsBefore = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction Stop
         $dfuBefore = $allDevsBefore | Where-Object { $_.Present -and ($_.Name -like "*DFU*" -or $_.DeviceID -like "*VID_0483&PID_DF11*") }
         $hadDfu = $null -ne $dfuBefore
         # 2. Запускаем процесс и ждем его закрытия
@@ -148,7 +148,7 @@ function Get-FlightControllerImpulseRC {
         # Короткая пауза для обновления конфигурации оборудования операционной системой
         Start-Sleep -Seconds 3
         # 3. Делаем повторный аппаратный опрос системы ПОСЛЕ закрытия утилиты
-        $allDevsAfter = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction SilentlyContinue
+        $allDevsAfter = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction Stop
         $dfuAfter = $allDevsAfter | Where-Object { $_.Present -and ($_.Name -like "*DFU*" -or $_.DeviceID -like "*VID_0483&PID_DF11*") }
         $hasDfuNow = $null -ne $dfuAfter
         # 4. Анализируем реальное изменение конфигурации железа

@@ -13,6 +13,9 @@ function Show-RadioModuleMenu {
 
         Show-Input "`n> Выбери действие [0]: "
         $choice = [Console]::ReadLine()
+        if ($null -eq $choice) {
+            return
+        }
 
         switch ($choice) {
             "0" { return }

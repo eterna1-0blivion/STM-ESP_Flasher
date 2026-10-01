@@ -3,8 +3,15 @@
 function Get-DeviceStatus {
     # Сначала говорим пользователю, что программа думает
     Show-Message -Message "Поиск подключенного оборудования..." -Color "Gray"
-    
-    $allDevices = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction SilentlyContinue
+
+    try {
+        $allDevices = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction Stop
+    }
+    catch {
+        Show-Message -Message "[ОШИБКА] Не удалось проверить подключённые устройства." -Color "Red"
+        Show-Message -Message $_.Exception.Message -Color "DarkRed"
+        return
+    }
     
     # Фильтруем строго по вхождению "(COM" с открывающей скобкой, чтобы отсечь сторонние компоненты
     $comDevices = $allDevices | Where-Object { $_.Present -and ($_.Name -like "*STMicroelectronics*" -or $_.Name -like "*(COM*") }

@@ -10,7 +10,7 @@ $version = 'v0.1.1'
 [Console]::InputEncoding = [System.Text.Encoding]::UTF8
 
 # Подгружаем сборку графических диалогов WPF для совместимости с PowerShell 5.0
-Add-Type -AssemblyName PresentationFramework -ErrorAction SilentlyContinue
+Add-Type -AssemblyName PresentationFramework
 
 # Устанавливаем заголовок консоли, меняем задний фон
 $Host.UI.RawUI.WindowTitle = "FPV-Flasher ($version)"
@@ -51,11 +51,14 @@ function Show-MainMenu {
 while ($true) {
     Show-MainMenu
     $choice = [Console]::ReadLine()
+    if ($null -eq $choice) {
+        return
+    }
 
     switch ($choice) {
         "1" { Show-FlightControllerMenu }
         "2" { Show-RadioModuleMenu }
-        "0" { exit }
+        "0" { return }
         default { Show-WrongInput -Menu "Main" }
     }
 }

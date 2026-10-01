@@ -17,6 +17,9 @@ function Show-FlightControllerMenu {
 
         Show-Input "`n> Выбери действие [0-5]: "
         $choice = [Console]::ReadLine()
+        if ($null -eq $choice) {
+            return
+        }
 
         switch ($choice) {
             "1" { Get-FlightControllerRead }
