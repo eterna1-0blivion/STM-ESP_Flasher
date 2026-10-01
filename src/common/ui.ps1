@@ -7,6 +7,9 @@ function Show-Message {
         [ValidateSet("None", "Success", "Status", "Error", "Cancelled", "Info", "Warning", "Diagnostic")]
         [string]$Level = "None",
         [switch]$NewLine,
+        [Alias("Input")]
+        [ValidateSet("Choice", "Enter")]
+        [string]$InputMode,
         [ValidateSet("Black", "DarkBlue", "DarkGreen", "DarkCyan", "DarkRed", "DarkMagenta",
             "DarkYellow", "Gray", "DarkGray", "Blue", "Green", "Cyan", "Red", "Magenta", "Yellow", "White")]
         [string]$Color = "White"
@@ -39,21 +42,32 @@ function Show-Message {
         }
     }
 
+    [Console]::ForegroundColor = [ConsoleColor]::$Color
+
+    if ($PSBoundParameters.ContainsKey("InputMode")) {
+        if ($NewLine) {
+            [Console]::WriteLine()
+        }
+
+        [Console]::Write("> $Message")
+        [Console]::Out.Flush()
+
+        if ($InputMode -eq "Enter") {
+            do {
+                $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+            } until ($key.Character -eq "`r" -or $key.VirtualKeyCode -eq 13)
+
+            return
+        }
+
+        return [Console]::ReadLine()
+    }
+
     if ($NewLine) {
         $Message = [Environment]::NewLine + $Message
     }
 
-    [Console]::ForegroundColor = [ConsoleColor]::$Color
     [Console]::WriteLine($Message)
-}
-
-# Ввод от пользователя
-function Show-Input {
-    param (
-        [string]$Message
-    )
-    [Console]::ForegroundColor = [ConsoleColor]::White
-    [Console]::Write("$Message")
 }
 
 function Show-FlightControllerWait {
@@ -62,8 +76,7 @@ function Show-FlightControllerWait {
 }
 
 function Show-Exit {
-    Show-Message -Message "> Нажми любую клавишу для возврата в меню..." -Level "None" -NewLine
-    $null = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+    Show-Message -Message "Нажми Enter для возврата в меню..." -Level "None" -Input Enter -NewLine
 }
 
 function Show-WrongInput {

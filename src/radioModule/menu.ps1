@@ -11,8 +11,7 @@ function Show-RadioModuleMenu {
     0. Вернуться в главное меню
 "@ -Color "White"
 
-        Show-Input "`n> Выбери действие [0]: "
-        $choice = [Console]::ReadLine()
+        $choice = Show-Message -Message "Выбери действие [0]: " -Input Choice -NewLine
         if ($null -eq $choice) {
             return
         }

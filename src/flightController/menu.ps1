@@ -20,8 +20,7 @@ function Show-FlightControllerMenu {
     0. Вернуться в главное меню
 "@ -Color "White"
 
-        Show-Input "`n> Выбери действие [0-5]: "
-        $choice = [Console]::ReadLine()
+        $choice = Show-Message -Message "Выбери действие [0-5]: " -Input Choice -NewLine
         if ($null -eq $choice) {
             return
         }

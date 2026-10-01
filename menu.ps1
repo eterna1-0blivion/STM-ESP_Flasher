@@ -46,12 +46,11 @@ function Show-MainMenu {
     0. Выход из программы
 "@ -Color "White"
 
-    Show-Input "`n> Выбери действие [0-2]: "
+    Show-Message -Message "Выбери действие [0-2]: " -Input Choice -NewLine
 }
 
 while ($true) {
-    Show-MainMenu
-    $choice = [Console]::ReadLine()
+    $choice = Show-MainMenu
     if ($null -eq $choice) {
         return
     }

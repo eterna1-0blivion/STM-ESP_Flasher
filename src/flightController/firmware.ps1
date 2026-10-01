@@ -226,8 +226,7 @@ function Invoke-FlightControllerDFU {
     
     0. Назад
             " -Color "White"
-    Show-Input "> Выбери действие [0-2]: "
-    $dfuChoice = [Console]::ReadLine()
+    $dfuChoice = Show-Message -Message "Выбери действие [0-2]: " -Input Choice
 
     if ($null -eq $dfuChoice -or $dfuChoice -eq "0") {
         return
