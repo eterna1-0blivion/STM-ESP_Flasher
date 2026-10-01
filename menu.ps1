@@ -1,5 +1,5 @@
 # author: eterna1_0blivion
-$version = 'v0.0.4'
+$version = 'v0.0.4b'
 
 # Устанавливаем заголовок консоли и меняем задний фон
 $Host.UI.RawUI.WindowTitle = "STM32 Mini-Flasher ($version)"; $Host.UI.RawUI.BackgroundColor = "Black"
@@ -226,7 +226,7 @@ while ($true) {
          # Исправление драйверов ImpulseRC с аппаратной проверкой результата
         "5" {
             Show-Wait
-            $DriverTool = Join-Path $ScriptDir "ImpulseRC_Driver_Fixer.exe"
+            $DriverTool = Join-Path $ScriptDir "ImpulseRC.exe"
             
             try {
                 Show-Message -Message "Запуск ImpulseRC Driver Fixer... Пожалуйста, подожди завершения работы утилиты." -Color "Gray"
@@ -254,7 +254,7 @@ while ($true) {
                 # 4. Анализируем реальное изменение конфигурации железа
                 if ($proc.ExitCode -ne 0) {
                     # Если сама ОС выдала ошибку запуска (например, файл поврежден)
-                    Show-Message -Message "`nУтилита ImpulseRC завершила работу с системной ошибкой: $($proc.ExitCode)." -Color "Red"
+                    Show-Message -Message "`nУтилита ImpulseRC Driver Fixer завершила работу с системной ошибкой: $($proc.ExitCode)." -Color "Red"
                 }
                 elseif ($hasDfuNow) {
                     # Если устройство в режиме DFU сейчас физически существует в диспетчере задач
@@ -270,7 +270,7 @@ while ($true) {
                 }
             }
             catch {
-                Show-Message -Message "`n[ОШИБКА]: Не удалось корректно запустить или обработать ImpulseRC_Driver_Fixer.exe." -Color "Red"
+                Show-Message -Message "`n[ОШИБКА]: Не удалось корректно запустить или обработать ImpulseRC Driver Fixer." -Color "Red"
                 Show-Message -Message $_.Exception.Message -Color "DarkRed"
             }
             Show-Exit
