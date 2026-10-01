@@ -45,7 +45,7 @@ function Show-MainMenu {
     0. Выход из программы
 "@ -Color "White"
 
-    Show-Input "`n> Введи команду [0-2]: "
+    Show-Input "`n> Выбери действие [0-2]: "
 }
 
 while ($true) {
