@@ -1,8 +1,14 @@
 # author: eterna1_0blivion
-$version = 'v0.0.6a'
+$version = 'v0.0.7'
 
-# Устанавливаем заголовок консоли и меняем задний фон
-$Host.UI.RawUI.WindowTitle = "STM32 Mini-Flasher ($version)"; $Host.UI.RawUI.BackgroundColor = "Black"
+# Принудительно заставляем любую версию PowerShell работать в UTF-8 (чинит кириллицу на PS 5.0)
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+[Console]::InputEncoding = [System.Text.Encoding]::UTF8
+
+# Устанавливаем заголовок консоли, меняем задний фон
+$Host.UI.RawUI.WindowTitle = "STM32 Mini-Flasher ($version)"
+$Host.UI.RawUI.BackgroundColor = "Black"
+Clear-Host
 
 # Корректное определение папки запуска для EXE и для обычного скрипта PS
 if ($MyInvocation.MyCommand.CommandType -eq "ExternalScript") {
@@ -39,20 +45,19 @@ function Show-Input {
 
 # Динамическое определение статуса подключений COM и DFU устройств
 function Get-DeviceStatus {
-    $comDevices = Get-PnpDevice -PresentOnly -Class "Ports" -ErrorAction SilentlyContinue 
-    | Where-Object { $_.FriendlyName -like "*STMicroelectronics*" -or $_.FriendlyName -like "*COM*" }
-    $dfuDevices = Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue 
-    | Where-Object { $_.FriendlyName -like "*DFU*" -or $_.InstanceId -like "*USB\VID_0483&PID_DF11*" }
+    $allDevices = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction SilentlyContinue
+    $comDevices = $allDevices | Where-Object { $_.Present -and ($_.Name -like "*STMicroelectronics*" -or $_.Name -like "*COM*") }
+    $dfuDevices = $allDevices | Where-Object { $_.Present -and ($_.Name -like "*DFU*" -or $_.DeviceID -like "*VID_0483&PID_DF11*") }
 
     Show-Message -Message "---------------------------------------------------------" -Color "DarkGray"
     if ($comDevices) {
         foreach ($dev in $comDevices) {
-            Show-Message -Message "[СТАТУС] Обнаружен полётник в обычном режиме: $($dev.FriendlyName)" -Color "Cyan"
+            Show-Message -Message "[СТАТУС] Обнаружен полётник в обычном режиме: $($dev.Name)" -Color "Cyan"
         }
     }
     if ($dfuDevices) {
         foreach ($dev in $dfuDevices) {
-            Show-Message -Message "[СТАТУС] Обнаружен полётник в режиме прошивки: $($dev.FriendlyName) (DFU)" -Color "Green"
+            Show-Message -Message "[СТАТУС] Обнаружен полётник в режиме прошивки: $($dev.Name) (DFU)" -Color "Green"
         }
     }
     if (-not $comDevices -and -not $dfuDevices) {
@@ -254,15 +259,18 @@ while ($true) {
             try {
                 Show-Message -Message "Запуск ImpulseRC Driver Fixer... Пожалуйста, подожди завершения работы утилиты." -Color "Gray"
                 
-                # 1. Фиксируем статус DFU устройства ДО запуска
-                $dfuBefore = Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*DFU*" -or $_.InstanceId -like "*USB\VID_0483&PID_DF11*" }
+                # 1. Фиксируем статус DFU устройства ДО запуска через универсальный CIM
+                $allDevsBefore = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction SilentlyContinue
+                $dfuBefore = $allDevsBefore | Where-Object { $_.Present -and ($_.Name -like "*DFU*" -or $_.DeviceID -like "*VID_0483&PID_DF11*") }
                 $hadDfu = $null -ne $dfuBefore
+
                 # 2. Запускаем процесс и ждем его закрытия
                 $proc = Start-Process $DriverTool -PassThru -Wait
                 # Короткая пауза для обновления конфигурации оборудования операционной системой
                 Start-Sleep -Seconds 3
                 # 3. Делаем повторный аппаратный опрос системы ПОСЛЕ закрытия утилиты
-                $dfuAfter = Get-PnpDevice -PresentOnly -ErrorAction SilentlyContinue | Where-Object { $_.FriendlyName -like "*DFU*" -or $_.InstanceId -like "*USB\VID_0483&PID_DF11*" }
+                $allDevsAfter = Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction SilentlyContinue
+                $dfuAfter = $allDevsAfter | Where-Object { $_.Present -and ($_.Name -like "*DFU*" -or $_.DeviceID -like "*VID_0483&PID_DF11*") }
                 $hasDfuNow = $null -ne $dfuAfter
                 # 4. Анализируем реальное изменение конфигурации железа
                 if ($proc.ExitCode -ne 0) {
