@@ -40,7 +40,7 @@ function Show-MainMenu {
     Show-Separator
     Show-Message -Message @"
     1. Работа с полётным контроллером (STM32)
-    2. Работа с модулями управления (ESPtool)
+    2. Работа с модулем управления (ESPtool)
 
     0. Выход из программы
 "@ -Color "White"
