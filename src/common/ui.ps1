@@ -54,7 +54,7 @@ function Show-Message {
 
         if ($InputMode -eq "Enter") {
             do {
-                $key = $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
+                $key = Read-InputKey
             } until ($key.Character -eq "`r" -or $key.VirtualKeyCode -eq 13)
 
             return
@@ -68,6 +68,10 @@ function Show-Message {
     }
 
     [Console]::WriteLine($Message)
+}
+
+function Read-InputKey {
+    $Host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
 }
 
 function Show-FlightControllerWait {
