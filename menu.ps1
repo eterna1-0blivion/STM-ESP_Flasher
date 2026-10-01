@@ -22,6 +22,9 @@ else {
 }
 $currentDir = $scriptDir
 
+# Путь до STM32 CLI
+$stm32Tool = Join-Path $currentDir "bin\stm32pr.exe"
+
 # Вывод сообщений в консоль
 function Show-Message {
     param (
@@ -145,10 +148,8 @@ while ($true) {
             Show-Wait
             if (Test-Path $saveFile) { Remove-Item $saveFile -Force -ErrorAction SilentlyContinue }
             
-            # Определяем размер считывания в зависимости от расширения, выбранного пользователем
-            # По умолчанию шьем стандартные размеры для полетников
-            & "$currentDir\bin\stm32pr.exe" -c port=usb1 -r 0x08000000 0x80000 "$saveFile" | Out-Null
-            & "$currentDir\bin\stm32pr.exe" -c port=usb1 -r 0x08000000 0x100000 "$saveFile" | Out-Null
+            & $stm32Tool -c port=usb1 -r 0x08000000 0x80000 "$saveFile" | Out-Null
+            & $stm32Tool -c port=usb1 -r 0x08000000 0x100000 "$saveFile" | Out-Null
 
             if (Test-Path $saveFile) {
                 $fileSize = (Get-Item $saveFile).Length
@@ -178,16 +179,13 @@ while ($true) {
 
             Show-Wait
             Show-Message -Message "Запись файла: $(Split-Path $selectedFile -Leaf)" -Color "Gray"
-            
             $extension = [System.IO.Path]::GetExtension($selectedFile).ToLower()
 
             if ($extension -eq ".hex") {
-                # Для HEX-файлов адрес указывать не нужно, stm32pr берет его из структуры самого HEX
-                & "$currentDir\bin\stm32pr.exe" -c port=usb1 -w "$selectedFile" -v | Out-Null
+                & $stm32Tool -c port=usb1 -w "$selectedFile" -v | Out-Null
             }
             else {
-                # Для BIN-файлов адрес начала секторов обязателен
-                & "$currentDir\bin\stm32pr.exe" -c port=usb1 -w "$selectedFile" 0x08000000 -v | Out-Null
+                & $stm32Tool -c port=usb1 -w "$selectedFile" 0x08000000 -v | Out-Null
             }
             
             if ($LastExitCode -eq 0) {
@@ -202,7 +200,7 @@ while ($true) {
         # Erase FW
         "3" {
             Show-Wait
-            & "$currentDir\bin\stm32pr.exe" -c port=usb1 -e all | Out-Null
+            & $stm32Tool -c port=usb1 -e all | Out-Null
             
             if ($LastExitCode -eq 0) {
                 Show-Message -Message "`nОперация выполнена - прошивка на полётнике стёрта." -Color "Green"
@@ -233,13 +231,13 @@ while ($true) {
 
             if ($dfuChoice -eq "1") {
                 Show-Wait
-                & "$currentDir\bin\stm32pr.exe" -c port=usb1 -s | Out-Null
+                & $stm32Tool -c port=usb1 -s | Out-Null
                 Show-Message -Message "`nКоманда отправлена. Если плата поддерживает программный DFU, она переподключится." -Color "Green"
                 Show-Exit
             }
             elseif ($dfuChoice -eq "2") {
                 Show-Wait
-                & "$currentDir\bin\stm32pr.exe" -c port=usb1 -g 0x08000000 | Out-Null
+                & $stm32Tool -c port=usb1 -g 0x08000000 | Out-Null
                 Show-Message -Message "`nКоманда выхода отправлена. Плата перезагружается в рабочий режим." -Color "Green"
                 Show-Exit
             }
