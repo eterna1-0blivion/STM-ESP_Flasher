@@ -11,7 +11,8 @@ function Get-SaveFilePath {
     $dialog.InitialDirectory = $Config.RootDirectory
     $dialog.Title = "Выбери, куда сохранить прочитанную прошивку с полётного контроллера"
     $dialog.Filter = "Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex"
-    $dialog.FileName = "fw.bin"
+    $dialog.FileName = "firmware.bin"
+    $dialog.AddExtension = $true
     $dialog.ValidateNames = $true
     if ($dialog.ShowDialog() -eq $true) { return $dialog.FileName }
     return $null
@@ -27,6 +28,7 @@ function Get-OpenFilePath {
     $dialog.InitialDirectory = $Config.RootDirectory
     $dialog.Title = "Выбери файл прошивки для записи на полётный контроллер"
     $dialog.Filter = "Файлы прошивок (*.bin;*.hex)|*.bin;*.hex|Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex"
+    $dialog.CheckFileExists = $true
     if ($dialog.ShowDialog() -eq $true) { return $dialog.FileName }
     return $null
 }
