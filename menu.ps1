@@ -1,5 +1,5 @@
 # author: eterna1_0blivion
-$version = 'v0.1.10'
+$version = 'v0.2.1-dev'
 
 # Планируемые направления: поддержка ESPtool и цифровых видеопередатчиков.
 
@@ -28,12 +28,15 @@ $appConfig = [pscustomobject]@{
     RootDirectory       = $scriptDir
     STM32ProgrammerPath = Join-Path $scriptDir "files\STM32CubeCLT\bin\STM32_Programmer_CLI.exe"
     DriverFixerPath      = Join-Path $scriptDir "files\ImpulseRC_Driver_Fixer.exe"
+    EsptoolPath          = Join-Path $scriptDir "files\ESPtool\esptool.exe"
+    FCPassthroughPath    = Join-Path $scriptDir "files\FCPassthrough\flash_bin_bfpassthrough.exe"
 }
 
 . (Join-Path $scriptDir "src\common\ui.ps1")
 . (Join-Path $scriptDir "src\flightController\devices.ps1")
 . (Join-Path $scriptDir "src\flightController\firmware.ps1")
 . (Join-Path $scriptDir "src\flightController\menu.ps1")
+. (Join-Path $scriptDir "src\radioModule\operations.ps1")
 . (Join-Path $scriptDir "src\radioModule\menu.ps1")
 
 function Show-MainMenu {
@@ -57,7 +60,7 @@ while ($true) {
 
     switch ($choice) {
         "1" { Show-FlightControllerMenu -Config $appConfig }
-        "2" { Show-RadioModuleMenu }
+        "2" { Show-RadioModuleMenu -Config $appConfig }
         "0" { return }
         default { Show-WrongInput -Menu "Main" }
     }

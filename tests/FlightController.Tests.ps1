@@ -8,6 +8,7 @@
 . (Join-Path $PSScriptRoot "..\src\common\ui.ps1")
 . (Join-Path $PSScriptRoot "..\src\flightController\devices.ps1")
 . (Join-Path $PSScriptRoot "..\src\flightController\firmware.ps1")
+. (Join-Path $PSScriptRoot "..\src\radioModule\operations.ps1")
 
 Describe "Show-Message line breaks" {
     It "starts a new line only when the NewLine switch is provided" {
@@ -130,6 +131,21 @@ Describe "STM32 DFU device detection" {
 
         $devices.Count | Should Be 1
         $devices[0].Name | Should Be "STM32 Bootloader"
+    }
+}
+
+Describe "Betaflight bootloader request" {
+    It "builds the MSP v1 reboot-to-ROM-bootloader packet with a valid checksum" {
+        $packet = @(New-BetaflightBootloaderRequest)
+
+        ($packet -join ",") | Should Be "36,77,60,1,68,1,68"
+        ($packet[3] -bxor $packet[4] -bxor $packet[5]) | Should Be $packet[6]
+    }
+
+    It "builds a read-only MSP FC-variant probe packet" {
+        $packet = @(New-BetaflightMspRequest -Command 2)
+
+        ($packet -join ",") | Should Be "36,77,60,0,2,2"
     }
 }
 
@@ -286,5 +302,123 @@ Describe "STM32 runtime dependency lookup" {
         $result.Succeeded | Should Be $false
         $result.ExitCode | Should Be $null
         $result.Error | Should Match "Не найден полный совместимый набор DLL"
+    }
+}
+
+Describe "esptool command profiles" {
+    It "preserves the RX passthrough profile for a whole-image write" {
+        $arguments = @(New-RxFullImageArguments -Port "COM7" -FirmwarePath "C:\firmware files\rx.bin")
+
+        ($arguments -join "|") |
+            Should Be "--chip|esp32|--port|COM7|--baud|420000|--before|no-reset|--after|no-reset|--no-stub|write-flash|--no-compress|--flash-mode|dio|--flash-freq|40m|--flash-size|4MB|0x0|C:\firmware files\rx.bin"
+    }
+
+    It "writes segmented RX firmware at the documented addresses in order" {
+        $segments = @(
+            [pscustomobject]@{ Address = "0x1000"; Path = "boot.bin" }
+            [pscustomobject]@{ Address = "0x8000"; Path = "partitions.bin" }
+            [pscustomobject]@{ Address = "0xe000"; Path = "boot_app0.bin" }
+            [pscustomobject]@{ Address = "0x10000"; Path = "rx.bin" }
+        )
+        $arguments = @(New-RxSegmentedFirmwareArguments -Port "COM5" -Segments $segments)
+
+        ($arguments[-8..-1] -join "|") |
+            Should Be "0x1000|boot.bin|0x8000|partitions.bin|0xe000|boot_app0.bin|0x10000|rx.bin"
+    }
+
+    It "asks for only the RX application and fills the ROI support images from the bundled defaults" {
+        $config = [pscustomobject]@{
+            RootDirectory = Join-Path $PSScriptRoot ".."
+        }
+        Mock Get-RadioModuleFirmwarePath { "rx-application.bin" }
+
+        $segments = Get-RxSegmentedFirmware -Config $config
+
+        $segments.Count | Should Be 4
+        (($segments | ForEach-Object { "$($_.Address)|$([System.IO.Path]::GetFileName($_.Path))" }) -join ";") |
+            Should Be "0x1000|bootloader.bin;0x8000|partitions.bin;0xe000|boot_app0.bin;0x10000|rx-application.bin"
+        foreach ($segment in $segments[0..2]) {
+            (Test-Path -LiteralPath $segment.Path -PathType Leaf) | Should Be $true
+        }
+        Assert-MockCalled Get-RadioModuleFirmwarePath -Times 1
+    }
+
+    It "uses the supplied TX image offset and baud rate" {
+        $arguments = @(New-TxFirmwareWriteArguments -Port "COM12" -FirmwarePath "tx.bin")
+
+        ($arguments -join "|") | Should Be "--chip|esp32|--port|COM12|--baud|921600|write-flash|0x10000|tx.bin"
+    }
+
+    It "reads exactly 4 MiB for RX backups using the no-reset profile" {
+        $arguments = @(New-RxFlashReadArguments -Port "COM4" -OutputPath "rx-backup.bin")
+
+        ($arguments[-3..-1] -join "|") | Should Be "0|0x400000|rx-backup.bin"
+        ($arguments -contains "--no-stub") | Should Be $true
+        ($arguments -contains "no-reset") | Should Be $true
+    }
+
+    It "reads exactly 4 MiB for TX backups" {
+        $arguments = @(New-TxFlashReadArguments -Port "COM8" -OutputPath "tx-backup.bin")
+
+        ($arguments[-3..-1] -join "|") | Should Be "0|0x400000|tx-backup.bin"
+        ($arguments -contains "921600") | Should Be $true
+    }
+}
+
+Describe "Bundled esptool executable" {
+    It "runs its version command without requiring a connected serial device" {
+        $config = [pscustomobject]@{
+            EsptoolPath = Join-Path $PSScriptRoot "..\files\ESPtool\esptool.exe"
+        }
+        Mock Show-Message {}
+
+        $result = Invoke-EsptoolCommand -Config $config -Arguments @("version")
+
+        $result.Succeeded | Should Be $true
+        $result.ExitCode | Should Be 0
+    }
+
+    It "returns a nonzero status for an invalid esptool command" {
+        $config = [pscustomobject]@{
+            EsptoolPath = Join-Path $PSScriptRoot "..\files\ESPtool\esptool.exe"
+        }
+
+        $result = Invoke-EsptoolCommand -Config $config -Arguments @("not-a-command")
+
+        $result.Succeeded | Should Be $false
+        $result.ExitCode | Should Not Be 0
+    }
+}
+
+Describe "FC passthrough RX profile" {
+    It "selects ESP32 firmware and the chosen FC port without requesting a chip erase" {
+        $arguments = @(New-FcPassthroughRxFlashArguments -Port "COM9" -FirmwarePath "C:\firmware files\rx.bin")
+
+        ($arguments -join "|") |
+            Should Be "--port|COM9|--baud|921600|--esp32|--file|C:\firmware files\rx.bin"
+        ($arguments -contains "--erase") | Should Be $false
+    }
+
+    It "runs the supplied utility help without connecting to hardware" {
+        $config = [pscustomobject]@{
+            FCPassthroughPath = Join-Path $PSScriptRoot "..\files\FCPassthrough\flash_bin_bfpassthrough.exe"
+        }
+
+        $result = Invoke-FcPassthroughFlashCommand -Config $config -Arguments @("--help")
+
+        $result.Succeeded | Should Be $true
+        $result.ExitCode | Should Be 0
+    }
+
+    It "reports a missing utility instead of attempting to launch it" {
+        $config = [pscustomobject]@{
+            FCPassthroughPath = Join-Path $TestDrive "missing-flasher.exe"
+        }
+
+        $result = Invoke-FcPassthroughFlashCommand -Config $config -Arguments @("--help")
+
+        $result.Succeeded | Should Be $false
+        $result.ExitCode | Should Be $null
+        $result.Error | Should Match "FC Passthrough"
     }
 }
