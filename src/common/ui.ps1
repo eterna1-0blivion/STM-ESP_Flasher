@@ -101,10 +101,10 @@ function Get-UserFilePath {
     $normalizedExtensions = @($Extensions | ForEach-Object { $_.TrimStart(".").ToLowerInvariant() } | Select-Object -Unique)
     $extensionPattern = ($normalizedExtensions | ForEach-Object { "*.$_" }) -join ";"
     if ($normalizedExtensions -contains "bin" -and $normalizedExtensions -contains "hex") {
-        $filter = "Файлы прошивок ($extensionPattern)|$extensionPattern|Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex|Все файлы (*.*)|*.*"
+        $filter = "Файлы прошивок ($extensionPattern)|$extensionPattern|Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex"
     }
     else {
-        $filter = "Образ прошивки ($extensionPattern)|$extensionPattern|Все файлы (*.*)|*.*"
+        $filter = "Образ прошивки ($extensionPattern)|$extensionPattern"
     }
 
     if ($Mode -eq "Save") {

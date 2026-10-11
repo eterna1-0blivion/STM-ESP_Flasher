@@ -132,6 +132,7 @@ Describe "Shared file dialogs" {
         $script:capturedFileDialog.CheckFileExists | Should Be $true
         $script:capturedFileDialog.Filter | Should Match "Сырой дамп памяти"
         $script:capturedFileDialog.Filter | Should Match "Intel HEX формат"
+        $script:capturedFileDialog.Filter | Should Not Match "Все файлы"
     }
 
     It "configures a BIN save dialog with the default backup name and extension" {
@@ -158,6 +159,7 @@ Describe "Shared file dialogs" {
         $script:capturedFileDialog.AddExtension | Should Be $true
         $script:capturedFileDialog.ValidateNames | Should Be $true
         $script:capturedFileDialog.DefaultExt | Should Be ".bin"
+        $script:capturedFileDialog.Filter | Should Not Match "Все файлы"
     }
 }
 
