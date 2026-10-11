@@ -46,47 +46,14 @@ function Get-RadioModuleSerialPort {
     $ports[$portIndex - 1]
 }
 
-function Get-RadioModuleFirmwarePath {
-    param (
-        [Parameter(Mandatory)]
-        [pscustomobject]$Config,
-        [Parameter(Mandatory)]
-        [string]$Title,
-        [switch]$Save
-    )
-
-    if ($Save) {
-        $dialog = New-Object Microsoft.Win32.SaveFileDialog
-        $dialog.Title = $Title
-        $dialog.InitialDirectory = $Config.RootDirectory
-        $dialog.Filter = "Образ прошивки (*.bin)|*.bin|Все файлы (*.*)|*.*"
-        $dialog.FileName = "flash_backup.bin"
-        $dialog.AddExtension = $true
-        $dialog.ValidateNames = $true
-        $dialog.DefaultExt = ".bin"
-    }
-    else {
-        $dialog = New-Object Microsoft.Win32.OpenFileDialog
-        $dialog.Title = $Title
-        $dialog.InitialDirectory = $Config.RootDirectory
-        $dialog.Filter = "Образ прошивки (*.bin)|*.bin|Все файлы (*.*)|*.*"
-        $dialog.CheckFileExists = $true
-    }
-
-    if ($dialog.ShowDialog() -eq $true) {
-        return $dialog.FileName
-    }
-
-    return $null
-}
-
 function Get-RxSegmentedFirmware {
     param (
         [Parameter(Mandatory)]
         [pscustomobject]$Config
     )
 
-    $firmwarePath = Get-RadioModuleFirmwarePath -Config $Config -Title "Выберите BIN-файл прошивки RX (остальные файлы выберутся автоматически)"
+    $firmwarePath = Get-UserFilePath -Config $Config -Mode Open -Extensions "bin" `
+        -Purpose "BIN-файл прошивки RX (остальные файлы ROI выберутся автоматически)"
     if ($null -eq $firmwarePath) {
         return $null
     }
@@ -347,7 +314,7 @@ function Invoke-FcPassthroughRxFirmwareWrite {
     Show-RadioModuleHeader
     Show-Message -Message "Подключите полётный контроллер по USB и убедитесь, что приёмник подключён к поддерживаемому UART." -Level "Info" -NewLine
     Show-Message -Message "Этот способ использует Betaflight FC Passthrough; совместимость зависит от прошивки и конфигурации полётника." -Level "Warning"
-    $firmware = Get-RadioModuleFirmwarePath -Config $Config -Title "Выберите BIN-образ прошивки ESP32 RX"
+    $firmware = Get-UserFilePath -Config $Config -Mode Open -Extensions "bin" -Purpose "BIN-образ прошивки ESP32 RX"
     if (-not $firmware) {
         Show-Message -Message "Выбор прошивки отменён." -Level "Cancelled" -NewLine
         Show-Exit
@@ -387,7 +354,7 @@ function Invoke-RxFullImageWrite {
     if (-not $port) { return }
     Show-Message -Message "Профиль RX не управляет reset: заранее переведите модуль в режим загрузчика." -Level "Info" -NewLine
 
-    $firmware = Get-RadioModuleFirmwarePath -Config $Config -Title "Выберите цельный 4 МиБ образ прошивки RX"
+    $firmware = Get-UserFilePath -Config $Config -Mode Open -Extensions "bin" -Purpose "цельный 4 МиБ образ прошивки RX"
     if (-not $firmware) {
         Show-Message -Message "Выбор прошивки отменён." -Level "Cancelled" -NewLine
         Show-Exit
@@ -439,7 +406,8 @@ function Invoke-RxFlashRead {
     if (-not $port) { return }
     Show-Message -Message "Профиль RX не управляет reset: заранее переведите модуль в режим загрузчика." -Level "Info" -NewLine
 
-    $outputPath = Get-RadioModuleFirmwarePath -Config $Config -Title "Укажите файл для резервной копии RX" -Save
+    $outputPath = Get-UserFilePath -Config $Config -Mode Save -Extensions "bin" `
+        -Purpose "резервную копию RX" -DefaultFileName "flash_backup.bin"
     if (-not $outputPath) {
         Show-Message -Message "Выбор файла отменён." -Level "Cancelled" -NewLine
         Show-Exit
@@ -457,7 +425,7 @@ function Invoke-TxFirmwareWrite {
     $port = Get-RadioModuleSerialPort
     if (-not $port) { return }
 
-    $firmware = Get-RadioModuleFirmwarePath -Config $Config -Title "Выберите файл прошивки TX"
+    $firmware = Get-UserFilePath -Config $Config -Mode Open -Extensions "bin" -Purpose "файл прошивки TX"
     if (-not $firmware) {
         Show-Message -Message "Выбор прошивки отменён." -Level "Cancelled" -NewLine
         Show-Exit
@@ -481,7 +449,8 @@ function Invoke-TxFlashRead {
     $port = Get-RadioModuleSerialPort
     if (-not $port) { return }
 
-    $outputPath = Get-RadioModuleFirmwarePath -Config $Config -Title "Укажите файл для резервной копии TX" -Save
+    $outputPath = Get-UserFilePath -Config $Config -Mode Save -Extensions "bin" `
+        -Purpose "резервную копию TX" -DefaultFileName "flash_backup.bin"
     if (-not $outputPath) {
         Show-Message -Message "Выбор файла отменён." -Level "Cancelled" -NewLine
         Show-Exit

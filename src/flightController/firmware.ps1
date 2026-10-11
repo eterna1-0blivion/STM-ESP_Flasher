@@ -1,38 +1,6 @@
 # Операции с STM32 CLI. Все внешние команды проходят через Invoke-Stm32Command,
 # чтобы единообразно сохранить код возврата и текст диагностики утилиты.
 
-function Get-SaveFilePath {
-    param (
-        [Parameter(Mandatory)]
-        [pscustomobject]$Config
-    )
-
-    $dialog = New-Object Microsoft.Win32.SaveFileDialog
-    $dialog.InitialDirectory = $Config.RootDirectory
-    $dialog.Title = "Выбери, куда сохранить прочитанную прошивку с полётного контроллера"
-    $dialog.Filter = "Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex"
-    $dialog.FileName = "firmware.bin"
-    $dialog.AddExtension = $true
-    $dialog.ValidateNames = $true
-    if ($dialog.ShowDialog() -eq $true) { return $dialog.FileName }
-    return $null
-}
-
-function Get-OpenFilePath {
-    param (
-        [Parameter(Mandatory)]
-        [pscustomobject]$Config
-    )
-
-    $dialog = New-Object Microsoft.Win32.OpenFileDialog
-    $dialog.InitialDirectory = $Config.RootDirectory
-    $dialog.Title = "Выбери файл прошивки для записи на полётный контроллер"
-    $dialog.Filter = "Файлы прошивок (*.bin;*.hex)|*.bin;*.hex|Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex"
-    $dialog.CheckFileExists = $true
-    if ($dialog.ShowDialog() -eq $true) { return $dialog.FileName }
-    return $null
-}
-
 function Get-Stm32RuntimeDirectory {
     param (
         [Parameter(Mandatory)]
@@ -163,7 +131,8 @@ function Invoke-FlightControllerFirmwareRead {
         [pscustomobject]$Config
     )
 
-    $saveFile = Get-SaveFilePath -Config $Config
+    $saveFile = Get-UserFilePath -Config $Config -Mode Save -Extensions @("bin", "hex") `
+        -Purpose "прочитанную прошивку с полётного контроллера" -DefaultFileName "firmware.bin"
     if ($null -eq $saveFile) {
         Show-FlightControllerHeader
         Show-Message -Message "Операция отменена пользователем." -Level "Cancelled" -NewLine
@@ -232,7 +201,8 @@ function Invoke-FlightControllerFirmwareWrite {
         [pscustomobject]$Config
     )
 
-    $selectedFile = Get-OpenFilePath -Config $Config
+    $selectedFile = Get-UserFilePath -Config $Config -Mode Open -Extensions @("bin", "hex") `
+        -Purpose "прошивки для полётного контроллера"
     if ($null -eq $selectedFile) {
         Show-FlightControllerHeader
         Show-Message -Message "Операция отменена пользователем." -Level "Cancelled" -NewLine

@@ -83,6 +83,54 @@ function Show-Exit {
     Show-Message -Message "Нажми Enter для возврата в меню..." -Level "None" -Input Enter -NewLine
 }
 
+function Get-UserFilePath {
+    param (
+        [Parameter(Mandatory)]
+        [pscustomobject]$Config,
+        [Parameter(Mandatory)]
+        [ValidateSet("Open", "Save")]
+        [string]$Mode,
+        [Parameter(Mandatory)]
+        [ValidateSet("bin", "hex")]
+        [string[]]$Extensions,
+        [Parameter(Mandatory)]
+        [string]$Purpose,
+        [string]$DefaultFileName
+    )
+
+    $normalizedExtensions = @($Extensions | ForEach-Object { $_.TrimStart(".").ToLowerInvariant() } | Select-Object -Unique)
+    $extensionPattern = ($normalizedExtensions | ForEach-Object { "*.$_" }) -join ";"
+    if ($normalizedExtensions -contains "bin" -and $normalizedExtensions -contains "hex") {
+        $filter = "Файлы прошивок ($extensionPattern)|$extensionPattern|Сырой дамп памяти (*.bin)|*.bin|Intel HEX формат (*.hex)|*.hex|Все файлы (*.*)|*.*"
+    }
+    else {
+        $filter = "Образ прошивки ($extensionPattern)|$extensionPattern|Все файлы (*.*)|*.*"
+    }
+
+    if ($Mode -eq "Save") {
+        $dialog = New-Object Microsoft.Win32.SaveFileDialog
+        $dialog.Title = "Выберите, куда сохранить: $Purpose"
+        $dialog.Filter = $filter
+        $dialog.FileName = if ($DefaultFileName) { $DefaultFileName } else { "firmware.$($normalizedExtensions[0])" }
+        $dialog.AddExtension = $true
+        $dialog.ValidateNames = $true
+        $dialog.DefaultExt = ".$($normalizedExtensions[0])"
+    }
+    else {
+        $dialog = New-Object Microsoft.Win32.OpenFileDialog
+        $dialog.Title = "Выберите файл: $Purpose"
+        $dialog.Filter = $filter
+        $dialog.CheckFileExists = $true
+    }
+
+    $dialog.InitialDirectory = $Config.RootDirectory
+    if ($dialog.ShowDialog() -eq $true) {
+        return $dialog.FileName
+    }
+
+    return $null
+}
+
 function Show-WrongInput {
     param (
         [Parameter(Mandatory)]

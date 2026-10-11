@@ -105,6 +105,62 @@ Describe "Show-Message input prompts" {
     }
 }
 
+Describe "Shared file dialogs" {
+    BeforeEach {
+        $script:capturedFileDialog = $null
+    }
+
+    It "configures an open dialog with BIN and HEX choices and requires an existing file" {
+        Mock New-Object {
+            $dialog = [pscustomobject]@{
+                FileName        = "selected.hex"
+                InitialDirectory = ""
+                Title           = ""
+                Filter          = ""
+                CheckFileExists = $false
+            }
+            Add-Member -InputObject $dialog -MemberType ScriptMethod -Name ShowDialog -Value { return $true }
+            $script:capturedFileDialog = $dialog
+            $dialog
+        } -ParameterFilter { $TypeName -eq "Microsoft.Win32.OpenFileDialog" }
+
+        $config = [pscustomobject]@{ RootDirectory = "C:\FPV-Flasher" }
+        $path = Get-UserFilePath -Config $config -Mode Open -Extensions @("bin", "hex") -Purpose "прошивки FC"
+
+        $path | Should Be "selected.hex"
+        $script:capturedFileDialog.InitialDirectory | Should Be "C:\FPV-Flasher"
+        $script:capturedFileDialog.CheckFileExists | Should Be $true
+        $script:capturedFileDialog.Filter | Should Match "Сырой дамп памяти"
+        $script:capturedFileDialog.Filter | Should Match "Intel HEX формат"
+    }
+
+    It "configures a BIN save dialog with the default backup name and extension" {
+        Mock New-Object {
+            $dialog = [pscustomobject]@{
+                FileName         = ""
+                InitialDirectory = ""
+                Title            = ""
+                Filter           = ""
+                AddExtension     = $false
+                ValidateNames    = $false
+                DefaultExt       = ""
+            }
+            Add-Member -InputObject $dialog -MemberType ScriptMethod -Name ShowDialog -Value { return $true }
+            $script:capturedFileDialog = $dialog
+            $dialog
+        } -ParameterFilter { $TypeName -eq "Microsoft.Win32.SaveFileDialog" }
+
+        $config = [pscustomobject]@{ RootDirectory = "C:\FPV-Flasher" }
+        $path = Get-UserFilePath -Config $config -Mode Save -Extensions "bin" `
+            -Purpose "резервную копию RX" -DefaultFileName "flash_backup.bin"
+
+        $path | Should Be "flash_backup.bin"
+        $script:capturedFileDialog.AddExtension | Should Be $true
+        $script:capturedFileDialog.ValidateNames | Should Be $true
+        $script:capturedFileDialog.DefaultExt | Should Be ".bin"
+    }
+}
+
 Describe "STM32 DFU device detection" {
     It "accepts the STM32 bootloader VID/PID and ignores unrelated DFU-named devices" {
         Mock Get-CimInstance {
@@ -171,7 +227,7 @@ Describe "Firmware write command construction" {
             STM32ProgrammerPath = "unused-by-this-test.exe"
         }
 
-        Mock Get-OpenFilePath { "C:\firmware images\test.hex" }
+        Mock Get-UserFilePath { "C:\firmware images\test.hex" }
         Mock Show-FlightControllerWait {}
         Mock Show-Message {}
         Mock Show-Exit {}
@@ -201,7 +257,7 @@ Describe "Firmware read command construction" {
             STM32ProgrammerPath = "unused-by-this-test.exe"
         }
 
-        Mock Get-SaveFilePath { $script:readOutputPath }
+        Mock Get-UserFilePath { $script:readOutputPath }
         Mock Show-FlightControllerWait {}
         Mock Show-FlightControllerHeader {}
         Mock Show-Message {}
@@ -330,7 +386,7 @@ Describe "esptool command profiles" {
         $config = [pscustomobject]@{
             RootDirectory = Join-Path $PSScriptRoot ".."
         }
-        Mock Get-RadioModuleFirmwarePath { "rx-application.bin" }
+        Mock Get-UserFilePath { "rx-application.bin" }
 
         $segments = Get-RxSegmentedFirmware -Config $config
 
@@ -340,7 +396,7 @@ Describe "esptool command profiles" {
         foreach ($segment in $segments[0..2]) {
             (Test-Path -LiteralPath $segment.Path -PathType Leaf) | Should Be $true
         }
-        Assert-MockCalled Get-RadioModuleFirmwarePath -Times 1
+        Assert-MockCalled Get-UserFilePath -Times 1
     }
 
     It "uses the supplied TX image offset and baud rate" {
