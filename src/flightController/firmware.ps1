@@ -131,7 +131,7 @@ function Invoke-FlightControllerFirmwareRead {
         [pscustomobject]$Config
     )
 
-    $saveFile = Get-UserFilePath -Config $Config -Mode Save -Extensions @("bin", "hex") `
+    $saveFile = Get-UserFilePath -Mode Save -Extensions @("bin", "hex") `
         -Purpose "прочитанную прошивку с полётного контроллера" -DefaultFileName "firmware.bin"
     if ($null -eq $saveFile) {
         Show-FlightControllerHeader
@@ -201,7 +201,7 @@ function Invoke-FlightControllerFirmwareWrite {
         [pscustomobject]$Config
     )
 
-    $selectedFile = Get-UserFilePath -Config $Config -Mode Open -Extensions @("bin", "hex") `
+    $selectedFile = Get-UserFilePath -Mode Open -Extensions @("bin", "hex") `
         -Purpose "прошивки для полётного контроллера"
     if ($null -eq $selectedFile) {
         Show-FlightControllerHeader

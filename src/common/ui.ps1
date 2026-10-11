@@ -86,8 +86,6 @@ function Show-Exit {
 function Get-UserFilePath {
     param (
         [Parameter(Mandatory)]
-        [pscustomobject]$Config,
-        [Parameter(Mandatory)]
         [ValidateSet("Open", "Save")]
         [string]$Mode,
         [Parameter(Mandatory)]
@@ -123,7 +121,7 @@ function Get-UserFilePath {
         $dialog.CheckFileExists = $true
     }
 
-    $dialog.InitialDirectory = $Config.RootDirectory
+    $dialog.InitialDirectory = [Environment]::GetFolderPath([Environment+SpecialFolder]::DesktopDirectory)
     if ($dialog.ShowDialog() -eq $true) {
         return $dialog.FileName
     }

@@ -124,11 +124,11 @@ Describe "Shared file dialogs" {
             $dialog
         } -ParameterFilter { $TypeName -eq "Microsoft.Win32.OpenFileDialog" }
 
-        $config = [pscustomobject]@{ RootDirectory = "C:\FPV-Flasher" }
-        $path = Get-UserFilePath -Config $config -Mode Open -Extensions @("bin", "hex") -Purpose "прошивки FC"
+        $desktop = [Environment]::GetFolderPath([Environment+SpecialFolder]::DesktopDirectory)
+        $path = Get-UserFilePath -Mode Open -Extensions @("bin", "hex") -Purpose "прошивки FC"
 
         $path | Should Be "selected.hex"
-        $script:capturedFileDialog.InitialDirectory | Should Be "C:\FPV-Flasher"
+        $script:capturedFileDialog.InitialDirectory | Should Be $desktop
         $script:capturedFileDialog.CheckFileExists | Should Be $true
         $script:capturedFileDialog.Filter | Should Match "Сырой дамп памяти"
         $script:capturedFileDialog.Filter | Should Match "Intel HEX формат"
@@ -151,11 +151,12 @@ Describe "Shared file dialogs" {
             $dialog
         } -ParameterFilter { $TypeName -eq "Microsoft.Win32.SaveFileDialog" }
 
-        $config = [pscustomobject]@{ RootDirectory = "C:\FPV-Flasher" }
-        $path = Get-UserFilePath -Config $config -Mode Save -Extensions "bin" `
+        $desktop = [Environment]::GetFolderPath([Environment+SpecialFolder]::DesktopDirectory)
+        $path = Get-UserFilePath -Mode Save -Extensions "bin" `
             -Purpose "резервную копию RX" -DefaultFileName "flash_backup.bin"
 
         $path | Should Be "flash_backup.bin"
+        $script:capturedFileDialog.InitialDirectory | Should Be $desktop
         $script:capturedFileDialog.AddExtension | Should Be $true
         $script:capturedFileDialog.ValidateNames | Should Be $true
         $script:capturedFileDialog.DefaultExt | Should Be ".bin"
